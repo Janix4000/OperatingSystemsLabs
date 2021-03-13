@@ -17,27 +17,6 @@ typedef struct MergedFiles
 
 int test_function();
 
-int getNumberOfLines(FILE *file)
-{
-    int lines = 0;
-    char ch;
-    rewind(file);
-    while (!feof(file))
-    {
-        ch = fgetc(file);
-        if (ch == '\n')
-        {
-            lines++;
-        }
-    }
-    if (ch != '\n')
-    {
-        lines++;
-    }
-    rewind(file);
-    return lines;
-}
+int getNumberOfLines(FILE *file);
 
-MergedPair *mergePair(char firstFilename[], char secondFilename[])
-{
-}
+MergedPair *mergePair(char firstFilename[], char secondFilename[]);
