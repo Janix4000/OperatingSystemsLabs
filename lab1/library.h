@@ -6,7 +6,7 @@
 typedef struct MergedPair
 {
     int nrows;
-    char **lines;
+    char (*lines)[64];
 } MergedPair;
 
 typedef struct MergedFiles
@@ -19,4 +19,6 @@ int test_function();
 
 int getNumberOfLines(FILE *file);
 
-MergedPair *mergePair(char firstFilename[], char secondFilename[]);
+MergedPair *makeMergedPair(int allLines);
+
+MergedPair *mergePair(const char firstFilename[], const char secondFilename[]);
