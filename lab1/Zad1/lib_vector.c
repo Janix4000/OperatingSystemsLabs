@@ -12,9 +12,7 @@ void *vecPushBack(LibVector *vec, void *obj)
     }
     if (vec->size == vec->capacity)
     {
-        vec->capacity *= 2;
-        vec->container =
-            realloc(vec->container, sizeof *vec->container * vec->capacity);
+        vecReserve(vec, vec->capacity * 2);
     }
     vec->container[vec->size] = obj;
     vec->size++;
@@ -66,4 +64,14 @@ void vecClear(LibVector *vector)
 void vecFree(LibVector *vector)
 {
     vecClear(vector);
+}
+
+void vecReserve(LibVector *vec, size_t newCapacity)
+{
+    if (newCapacity > vec->capacity)
+    {
+        vec->container =
+            realloc(vec->container, sizeof *vec->container * newCapacity);
+        vec->capacity = newCapacity;
+    }
 }

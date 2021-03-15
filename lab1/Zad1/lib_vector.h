@@ -16,3 +16,4 @@ void *vecEraseAt(LibVector *vector, int idx);
 LibVector *vecInit(LibVector *vector);
 void vecClear(LibVector *vector);
 void vecFree(LibVector *vector);
+void vecReserve(LibVector *vector, size_t newCapacity);

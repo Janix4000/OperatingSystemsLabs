@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*.tcc": "cpp",
-        "lib_merge.h": "c"
+        "lib_merge.h": "c",
+        "string": "c",
+        "vector": "c"
     }
 }
