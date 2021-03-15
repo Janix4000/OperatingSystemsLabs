@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "library.h"
+#include "lib_merge.h"
 
 #include <stdlib.h>
 
