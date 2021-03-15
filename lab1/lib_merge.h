@@ -18,8 +18,7 @@ typedef LibVector LibLinesBlocks;
 int test_function();
 
 size_t libReadLineBlock(LibLinesBlocks *blocks, FILE *mergedLinesFile);
-void libRemoveLineBlockAt(LibLinesBlocks *blocks, size_t idx);
-void _libFreeLines(LibLines *lines);
+void removeLineBlockAt(LibLinesBlocks *blocks, size_t idx);
 void removeLineInAt(LibLinesBlocks *blocks, size_t blockIdx, size_t lineIdx);
 void printLinesBlocks(LibLinesBlocks *blocks);
 void freeRowBlocks(LibLinesBlocks *blocks);
