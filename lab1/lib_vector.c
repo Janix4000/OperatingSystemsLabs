@@ -1,5 +1,6 @@
 #include "lib_vector.h"
 #include <string.h>
+#include <stdio.h>
 
 void *vecPushBack(LibVector *vec, void *obj)
 {
@@ -54,6 +55,7 @@ LibVector *vecInit(LibVector *vector)
     vector->capacity = 0;
     vector->size = 0;
     vector->container = NULL;
+    return vector;
 }
 
 void vecClear(LibVector *vector)
