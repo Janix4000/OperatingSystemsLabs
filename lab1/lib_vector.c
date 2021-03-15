@@ -1,7 +1,7 @@
 #include "lib_vector.h"
 #include <string.h>
 
-void *vecPushBack(Vector *vec, void *obj)
+void *vecPushBack(LibVector *vec, void *obj)
 {
     if (!vec)
     {
@@ -19,11 +19,11 @@ void *vecPushBack(Vector *vec, void *obj)
     vec->size++;
     return obj;
 }
-void *vecPopBack(Vector *vector)
+void *vecPopBack(LibVector *vector)
 {
     return vecEraseAt(vector, vector->size - 1);
 }
-void *vecEraseAt(Vector *vec, int idx)
+void *vecEraseAt(LibVector *vec, int idx)
 {
     if (!vec || idx >= vec->size)
     {
@@ -49,19 +49,19 @@ void *vecEraseAt(Vector *vec, int idx)
     return obj;
 }
 
-Vector *vecInit(Vector *vector)
+LibVector *vecInit(LibVector *vector)
 {
     vector->capacity = 0;
     vector->size = 0;
     vector->container = NULL;
 }
 
-void vecClear(Vector *vector)
+void vecClear(LibVector *vector)
 {
     free(vector->container);
     vecInit(vector);
 }
-void vecFree(Vector *vector)
+void vecFree(LibVector *vector)
 {
     vecClear(vector);
 }

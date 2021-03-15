@@ -6,11 +6,11 @@ typedef struct
     size_t capacity;
     size_t size;
     void **container;
-} Vector;
+} LibVector;
 
-void *vecPushBack(Vector *vector, void *obj);
-void *vecPopBack(Vector *vector);
-void *vecEraseAt(Vector *vector, int idx);
-Vector *vecInit(Vector *vector);
-void vecClear(Vector *vector);
-void vecFree(Vector *vector);
+void *vecPushBack(LibVector *vector, void *obj);
+void *vecPopBack(LibVector *vector);
+void *vecEraseAt(LibVector *vector, int idx);
+LibVector *vecInit(LibVector *vector);
+void vecClear(LibVector *vector);
+void vecFree(LibVector *vector);
