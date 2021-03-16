@@ -19,4 +19,4 @@ main1: clean #static
 	make run
 
 run:
-	./main kfjsd jkdj kkk sddd    
+	./main --create_table 3 --create_table 3
