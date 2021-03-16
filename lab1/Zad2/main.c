@@ -12,7 +12,7 @@ void createTable(int *argc, char ***argv)
         fprintf(stderr, "--create_table needs one argument.\n");
         return;
     }
-    size_t nMaxPairs = atoi(**argv);
+    int nMaxPairs = atoi(**argv);
     if (nMaxPairs == 0)
     {
         fprintf(stderr, "--create_table needs one positive integer argument, given: \"%s\".\n", **argv);
@@ -34,7 +34,7 @@ void mergeFiles(int *argc, char ***argv)
 {
     int nToMerge = 0;
     char inputIsValid = 1;
-    while (!*argc || ***argv == '-')
+    while (*argc > 0 && ***argv != '-')
     {
         char *filenamePair = **argv;
         char *colonPos = strchr(filenamePair, ':');
@@ -59,8 +59,35 @@ void mergeFiles(int *argc, char ***argv)
     }
     if (inputIsValid)
     {
-        printf("Merging.../n");
+        printf("Merging...\n");
     }
+}
+
+void removeBlock(int *argc, char ***argv)
+{
+    if (!*argc || ***argv == '-')
+    {
+        fprintf(stderr, "--remove_block needs one argument.\n");
+        return;
+    }
+    int blockIdx = atoi(**argv);
+    if (sscanf(**argv, "%d", &blockIdx) != 1)
+    {
+        fprintf(stderr, "--remove_block needs one non-negative index argument, given: \"%s\".\n", **argv);
+        ++*argv;
+        --*argc;
+        return;
+    }
+    ++*argv;
+    --*argc;
+    if (!tableHasBeenCreated)
+    {
+        fprintf(stderr, "Table has not been initialized.\n");
+        return;
+    }
+
+    // remove block
+    printf("Removed block [%d].\n", blockIdx);
 }
 
 int main(int argc, char **argv)
@@ -83,9 +110,11 @@ int main(int argc, char **argv)
         }
         else if (strcmp(comm, "--merge_files") == 0)
         {
+            mergeFiles(&argc, &argv);
         }
         else if (strcmp(comm, "--remove_block") == 0)
         {
+            removeBlock(&argc, &argv);
         }
         else if (strcmp(comm, "--remove_row") == 0)
         {

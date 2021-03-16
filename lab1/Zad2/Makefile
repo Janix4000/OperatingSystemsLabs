@@ -19,4 +19,5 @@ main1: clean #static
 	make run
 
 run:
-	./main --create_table 3 --create_table 3
+	clear
+	./main --create_table 3 --merge_files ./kek:./lol:./lol ./moar:./reakt --remove_block 2
