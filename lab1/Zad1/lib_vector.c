@@ -50,6 +50,10 @@ void *vecEraseAt(LibVector *vec, int idx)
 
 LibVector *vecInit(LibVector *vector)
 {
+    if (!vector)
+    {
+        vector = malloc(sizeof *vector);
+    }
     vector->capacity = 0;
     vector->size = 0;
     vector->container = NULL;
