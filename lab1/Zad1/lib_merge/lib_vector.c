@@ -4,7 +4,7 @@
 
 void *vecPushBack(LibVector *vec, void *obj)
 {
-    if (!vec)
+    if (!vec->capacity)
     {
         vec->capacity = 4;
         vec->container = calloc(sizeof *vec->container,
