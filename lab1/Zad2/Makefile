@@ -1,6 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -O0
-
+OPT = O0
+NAME = main
 # static:
 # 	$(CC) $(CFLAGS) -c lib_vector.c -o lib_vector.o 
 # 	$(CC) $(CFLAGS) -c lib_merge.c -o lib_merge.o 
@@ -12,10 +13,14 @@ clean:
 	rm -f *.so
 	rm -f *merged*
 
-main1: clean #static
-	$(CC) $(CFLAGS) -c main.c -o main.o
-	#$(CC) $(CFLAGS) -static main.o -L. lib_merge.a -o main
-	$(CC) $(CFLAGS) -static main.o -o main
+$(NAME)_static_$(OPT): $(NAME).c
+	$(CC) $(CFLAGS) -$(OPT) -static $(NAME).c -I../Zad1/lib_merge -L../Zad1/lib_merge -lmerge -o $(NAME)_static_$(OPT)
+
+main1: clean $(NAME)_static_$(OPT)
+	
+	# $(CC) $(CFLAGS) -c main.c -o main.o
+	# #$(CC) $(CFLAGS) -static main.o -L. lib_merge.a -o main
+	# $(CC) $(CFLAGS) -static main.o -o main
 	make run
 
 run:

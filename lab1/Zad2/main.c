@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "lib_merge.h"
+
 char tableHasBeenCreated = 0;
 
 void createTable(int *argc, char ***argv)

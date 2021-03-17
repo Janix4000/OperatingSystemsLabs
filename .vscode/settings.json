@@ -3,6 +3,7 @@
         "*.tcc": "cpp",
         "lib_merge.h": "c",
         "string": "c",
-        "vector": "c"
+        "vector": "c",
+        "stdlib.h": "c"
     }
 }

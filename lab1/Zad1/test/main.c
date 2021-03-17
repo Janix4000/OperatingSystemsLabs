@@ -5,6 +5,7 @@
 
 int main()
 {
-    printf("Hello World! Magic number is %d!\n", test_function());
+    test_function();
+    //printf("Hello World! Magic number is %d!\n", test_function());
     return 0;
 }
