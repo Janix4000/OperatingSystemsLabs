@@ -20,4 +20,4 @@ main1: clean #static
 
 run:
 	clear
-	./main --create_table 3 --merge_files ./kek:./lol:./lol ./moar:./reakt --remove_block 2
+	./main --create_table 3 --merge_files ./kek:./lol ./moar:./reakt --remove_block 2 --remove_row 2 3 --start_measure_time

@@ -92,9 +92,9 @@ static void _libMergePairOfFilesToTmp(FILE *firstFile, FILE *secondFile, FILE *t
         fwrite(fLine, sizeof *fLine, nFirst, tmp);
         fwrite(sLine, sizeof *sLine, nSecond, tmp);
     }
-    rewind(tmp);
     free(fLine);
     free(sLine);
+    rewind(tmp);
 }
 
 void libMergeFilePairs(LibFiles *tmpFiles, LibFilenamePairs *filenamePairs)
