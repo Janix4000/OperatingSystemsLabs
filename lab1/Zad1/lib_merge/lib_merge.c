@@ -21,7 +21,15 @@ size_t libReadLineBlock(LibLinesBlocks *blocks, FILE *mergedLinesFile)
     }
     free(line);
     vecPushBack(blocks, lines);
-    return 1;
+    return lines->size;
+}
+
+void libReadBlocksFromFiles(LibLinesBlocks *blocks, LibFiles *tmpFiles)
+{
+    for (size_t iFile = 0; iFile < tmpFiles->size; iFile++)
+    {
+        libReadLineBlock(blocks, tmpFiles->container[iFile]);
+    }
 }
 
 static void _libFreeLines(LibLines *lines)
@@ -71,10 +79,12 @@ void libFreeLinesBlocks(LibLinesBlocks *blocks)
         _libFreeLines(lines);
         free(lines);
     }
+    vecFree(blocks);
 }
 
 void libAddFilenamePair(LibFilenamePairs *pairs, const char *filenamePair)
 {
+
     FilenamePair *pair = malloc(sizeof *pair);
     char *colonPos = strchr(filenamePair, ':');
     pair->firstFilename = strndup(filenamePair, colonPos - filenamePair);
@@ -115,8 +125,14 @@ void libMergeFilePairs(LibFiles *tmpFiles, LibFilenamePairs *filenamePairs)
         {
             fclose(tmp);
         }
-        fclose(firstFile);
-        fclose(secondFile);
+        if (firstFile)
+        {
+            fclose(firstFile);
+        }
+        if (secondFile)
+        {
+            fclose(secondFile);
+        }
     }
 }
 
@@ -129,6 +145,7 @@ void libFreeFilePairs(LibFilenamePairs *filenamePairs)
         free(pair->secondFilename);
         free(pair);
     }
+    vecFree(filenamePairs);
 }
 
 void libFreeFiles(LibFiles *tmpFiles)
@@ -138,4 +155,5 @@ void libFreeFiles(LibFiles *tmpFiles)
         FILE *tmp = vecPopBack(tmpFiles);
         fclose(tmp);
     }
+    vecFree(tmpFiles);
 }
