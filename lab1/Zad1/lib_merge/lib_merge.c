@@ -65,7 +65,7 @@ void libPrintLinesBlocks(LibLinesBlocks *blocks)
         LibLines *lines = blocks->container[iBlock];
         for (size_t iLine = 0; iLine < lines->size; iLine++)
         {
-            printf("%s\n", (char *)lines->container[iLine]);
+            printf("[%ld][%ld]%s\n", iBlock, iLine, (char *)lines->container[iLine]);
         }
         printf("\n");
     }
@@ -95,13 +95,14 @@ void libAddFilenamePair(LibFilenamePairs *pairs, const char *filenamePair)
 static void _libMergePairOfFilesToTmp(FILE *firstFile, FILE *secondFile, FILE *tmp)
 {
     char *fLine = NULL, *sLine = NULL;
-    size_t nFirst, nSecond;
+    size_t nFirst = 0, nSecond = 0;
+    size_t nF = 0, nS = 0;
     while (
-        getline(&fLine, &nFirst, firstFile) != 1 &&
-        getline(&sLine, &nSecond, secondFile) != 1)
+        (nF = getline(&fLine, &nFirst, firstFile)) != -1 &&
+        (nS = getline(&sLine, &nSecond, secondFile)) != -1)
     {
-        fwrite(fLine, sizeof *fLine, nFirst, tmp);
-        fwrite(sLine, sizeof *sLine, nSecond, tmp);
+        fwrite(fLine, sizeof *fLine, nF, tmp);
+        fwrite(sLine, sizeof *sLine, nS, tmp);
     }
     free(fLine);
     free(sLine);
@@ -124,6 +125,7 @@ void libMergeFilePairs(LibFiles *tmpFiles, LibFilenamePairs *filenamePairs)
         else
         {
             fclose(tmp);
+            printf("Couldnt open files.\n");
         }
         if (firstFile)
         {

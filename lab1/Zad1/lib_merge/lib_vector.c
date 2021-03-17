@@ -29,16 +29,12 @@ void *vecEraseAt(LibVector *vec, int idx)
         return NULL;
     }
     void *obj = vec->container[idx];
-    memmove(vec->container + idx,
-            vec->container + idx + 1, vec->size - idx - 1);
     vec->size--;
+    memmove(vec->container + idx,
+            vec->container + idx + 1, sizeof *vec->container * (vec->size - idx));
     if (vec->size * 4 < vec->capacity)
     {
-        if (vec->size == 0)
-        {
-            vecFree(vec);
-        }
-        else
+        if (vec->capacity > 4)
         {
             vec->capacity = vec->capacity / 2;
             vec->container = realloc(vec->container,
@@ -50,20 +46,18 @@ void *vecEraseAt(LibVector *vec, int idx)
 
 LibVector *vecInit(LibVector *vector)
 {
-    if (!vector)
-    {
-        vector = malloc(sizeof *vector);
-    }
-    vector->capacity = 0;
+    vector->capacity = 4;
     vector->size = 0;
-    vector->container = NULL;
+    vector->container = calloc(sizeof *vector->container, vector->capacity);
     return vector;
 }
 
 void vecClear(LibVector *vector)
 {
     free(vector->container);
-    vecInit(vector);
+    vector->capacity = 0;
+    vector->size = 0;
+    vector->container = NULL;
 }
 void vecFree(LibVector *vector)
 {
