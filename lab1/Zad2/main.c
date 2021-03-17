@@ -7,6 +7,7 @@
 #include "lib_merge.h"
 
 void createTable(int *argc, char ***argv);
+void freeTable(int *argc, char ***argv);
 void mergeFiles(int *argc, char ***argv);
 void removeBlock(int *argc, char ***argv);
 void removeRow(int *argc, char ***argv);
@@ -22,14 +23,16 @@ char isMeasureRunning = 0;
 
 int main(int argc, char **argv)
 {
-
+    printf("Nargs: {%d}\n", argc);
     if (argc == 1)
     {
         printf("No arguments in input.\n");
         return -1;
     }
+
     argc--;
     argv++;
+
     while (argc)
     {
         const char *comm = *argv;
@@ -38,6 +41,10 @@ int main(int argc, char **argv)
         if (strcmp(comm, "--create_table") == 0)
         {
             createTable(&argc, &argv);
+        }
+        else if (strcmp(comm, "--free_table") == 0)
+        {
+            freeTable(&argc, &argv);
         }
         else if (strcmp(comm, "--merge_files") == 0)
         {
@@ -96,12 +103,24 @@ void createTable(int *argc, char ***argv)
         return;
     }
 
-    printf("Creating table...\n");
+    printf("Creating table...");
     vecInit(&blocks);
     vecReserve(&blocks, nMaxPairs);
     tableHasBeenCreated = 1;
-    printf("Table created.\n");
+    printf(" Table created.\n");
 }
+void freeTable(int *argc, char ***argv)
+{
+    if (!tableHasBeenCreated)
+    {
+        fprintf(stderr, "Table has not been initialized yet.\n");
+        return;
+    }
+    tableHasBeenCreated = 0;
+    vecFree(&blocks);
+    printf("Table freed.\n");
+}
+
 void mergeFiles(int *argc, char ***argv)
 {
     int nToMerge = 0;
@@ -122,9 +141,9 @@ void mergeFiles(int *argc, char ***argv)
         }
 
         // merge
-        printf("Adding %s pair to list...", filenamePair);
+        // printf("Adding %s pair to list...", filenamePair);
         libAddFilenamePair(&filenamePairs, filenamePair);
-        printf(" Added.\n");
+        // printf(" Added.\n");
 
         ++nToMerge;
 
@@ -152,7 +171,7 @@ void mergeFiles(int *argc, char ***argv)
         libReadBlocksFromFiles(&blocks, &tmpFiles);
         libFreeFiles(&tmpFiles);
 
-        printf("Merged.\n");
+        printf("Merged %d file pairs.\n", nToMerge);
     }
 
     libFreeFilePairs(&filenamePairs);

@@ -1,12 +1,24 @@
 CC = gcc
 CFLAGS = -Wall -O0 -g
 
-static: clean
-	$(CC) $(CFLAGS) -c lib_vector.c -o lib_vector.o 
-	$(CC) $(CFLAGS) -c lib_merge.c -o lib_merge.o 
-	ar rcs libmerge.a lib_merge.o lib_vector.o
+ARFLAGS = rcs
+
+all: clean libmerge.a libmerge.so
+
+static: clean libmerge.a
+shared: clean libmerge.so
+
+libmerge.so:
+	$(CC) $(CFLAGS) lib_merge.c lib_vector.c -fPIC -shared -o libmerge.so
+
+libmerge.a: lib_merge_static.o lib_vector_static.o
+	$(AR) $(ARFLAGS) libmerge.a lib_merge_static.o lib_vector_static.o
+
+lib_merge_static.o:
+	$(CC) $(CFLAGS) -c lib_merge.c -o lib_merge_static.o 
+
+lib_vector_static.o:
+	$(CC) $(CFLAGS) -c lib_vector.c -o lib_vector_static.o 
 
 clean:
-	rm -f *.o 
-	rm -f *.a 
-	rm -f *.so
+	$(RM) -f *.o *.a *.so

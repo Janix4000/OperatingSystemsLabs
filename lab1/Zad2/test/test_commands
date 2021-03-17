@@ -1,0 +1,186 @@
+--start_measure_time
+--create_table 25
+--merge_files ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small
+--merge_files ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small
+--merge_files ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small
+--merge_files ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small
+--merge_files ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small
+--stop_measure_time
+--start_measure_time
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--free_table
+--stop_measure_time
+--start_measure_time
+--create_table 25
+--merge_files ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med
+--merge_files ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med
+--merge_files ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med
+--merge_files ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med
+--merge_files ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med ./test/med:./test/med
+--stop_measure_time
+--start_measure_time
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--free_table
+--stop_measure_time
+--start_measure_time
+--create_table 25
+--merge_files ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big
+--merge_files ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big
+--merge_files ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big
+--merge_files ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big
+--merge_files ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big ./test/big:./test/big
+--stop_measure_time
+--start_measure_time
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--free_table
+--stop_measure_time
+--start_measure_time
+--create_table 25
+--merge_files ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large
+--merge_files ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large
+--merge_files ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large
+--merge_files ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large
+--merge_files ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large ./test/large:./test/large
+--free_table
+--stop_measure_time
+--start_measure_time
+--create_table
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--free_table
+--stop_measure_time
+--start_measure_time
+--create_table 12
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--stop_measure_time
+--start_measure_time
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--remove_block 0
+--free_table
+--stop_measure_time
+--create_table 12
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--merge_files ./test/huge:./test/huge
+--start_measure_time
+--free_table
+--stop_measure_time
