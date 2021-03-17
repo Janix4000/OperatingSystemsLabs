@@ -12,6 +12,7 @@ void removeBlock(int *argc, char ***argv);
 void removeRow(int *argc, char ***argv);
 void startTimeMeasurement(int *argc, char ***argv);
 void stopTimeMeasurement(int *argc, char ***argv);
+void printBloks(int *argc, char ***argv);
 
 char tableHasBeenCreated = 0;
 LibLinesBlocks blocks;
@@ -21,6 +22,7 @@ char isMeasureRunning = 0;
 
 int main(int argc, char **argv)
 {
+
     if (argc == 1)
     {
         printf("No arguments in input.\n");
@@ -55,7 +57,11 @@ int main(int argc, char **argv)
         }
         else if (strcmp(comm, "--stop_measure_time") == 0)
         {
-            stopTimeMeasurement(argc, argv);
+            stopTimeMeasurement(&argc, &argv);
+        }
+        else if (strcmp(comm, "--print") == 0)
+        {
+            printBloks(&argc, &argv);
         }
         else
         {
@@ -63,6 +69,7 @@ int main(int argc, char **argv)
         }
     }
     libFreeLinesBlocks(&blocks);
+
     return 0;
 }
 
@@ -115,14 +122,15 @@ void mergeFiles(int *argc, char ***argv)
         }
 
         // merge
-        printf("Adding %s pair to list...\n", filenamePair);
-        &filenamePairs;
+        printf("Adding %s pair to list...", filenamePair);
         libAddFilenamePair(&filenamePairs, filenamePair);
-        printf("Added %s pair to list.\n", filenamePair);
+        printf(" Added.\n");
 
         ++nToMerge;
+
     next_argument:
         ++*argv;
+
         --*argc;
     }
     if (nToMerge == 0)
@@ -139,18 +147,19 @@ void mergeFiles(int *argc, char ***argv)
         printf("Merging...\n");
         LibFiles tmpFiles;
         vecInit(&tmpFiles);
-
         libMergeFilePairs(&tmpFiles, &filenamePairs);
 
         libReadBlocksFromFiles(&blocks, &tmpFiles);
-
         libFreeFiles(&tmpFiles);
+
         printf("Merged.\n");
     }
+
     libFreeFilePairs(&filenamePairs);
 }
 void removeBlock(int *argc, char ***argv)
 {
+
     if (!*argc || ***argv == '-')
     {
         fprintf(stderr, "--remove_block needs one argument.\n");
@@ -173,6 +182,7 @@ void removeBlock(int *argc, char ***argv)
     }
     if (blockIdx >= blocks.size)
     {
+
         fprintf(stderr, "Block idx out of range.\n");
         return;
     }
@@ -224,6 +234,7 @@ void removeRow(int *argc, char ***argv)
         fprintf(stderr, "Row idx out of range.\n");
         return;
     }
+
     printf("Removed row [%d][%d].\n", blockIdx, rowIdx);
     libRemoveLineInAt(&blocks, blockIdx, rowIdx);
 }
@@ -259,6 +270,11 @@ void stopTimeMeasurement(int *argc, char ***argv)
         printf("Real : User : System\n");
         printf("%ld %ld %ld\n", dtReal, dtUser, dtSys);
         isMeasureRunning = 0;
-        printf("Time measurement stopped.\n");
     }
+}
+
+void printBloks(int *argc, char ***argv)
+{
+
+    libPrintLinesBlocks(&blocks);
 }
