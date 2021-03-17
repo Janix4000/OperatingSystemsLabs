@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -O0
+CFLAGS = -Wall -O0 -g
 
 static: clean
 	$(CC) $(CFLAGS) -c lib_vector.c -o lib_vector.o 

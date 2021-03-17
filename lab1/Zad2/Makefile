@@ -1,7 +1,8 @@
 CC = gcc
-CFLAGS = -Wall -O0
+CFLAGS = -Wall -O0 -g
 OPT = O0
 NAME = main
+ARGS = --start_measure_time --create_table 3 --merge_files ./test/small:./test/small --remove_block 1 --remove_row 0 3 --print --stop_measure_time
 
 $(NAME)_static_$(OPT): $(NAME).c
 	$(CC) $(CFLAGS) -$(OPT) -static $(NAME).c -I../Zad1/lib_merge -L../Zad1/lib_merge -lmerge -o $(NAME)_static_$(OPT)
@@ -15,7 +16,7 @@ main: clean $(NAME)_static_$(OPT)
 	make run
 
 run:
-	./$(NAME)_static_$(OPT) --create_table 3 --merge_files ./kek:./lol ./moar:./reakt --remove_block 2 --remove_row 2 3 --start_measure_time --stop_measure_time
+	./$(NAME)_static_$(OPT) $(ARGS)
 
 rerun:
 	clear
