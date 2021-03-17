@@ -31,13 +31,13 @@ static void _libFreeLines(LibLines *lines)
         free(vecPopBack(lines));
     }
     vecFree(lines);
-    free(lines);
 }
 
 void libRemoveLineBlockAt(LibLinesBlocks *blocks, size_t idx)
 {
     LibLines *lines = vecEraseAt(blocks, idx);
     _libFreeLines(lines);
+    free(lines);
 }
 
 void libRemoveLineInAt(LibLinesBlocks *blocks, size_t blockIdx, size_t lineIdx)
@@ -63,13 +63,14 @@ void libPrintLinesBlocks(LibLinesBlocks *blocks)
     }
 }
 
-void libFreeRowBlocks(LibLinesBlocks *blocks)
+void libFreeLinesBlocks(LibLinesBlocks *blocks)
 {
     while (blocks->size)
     {
-        _libFreeLines(vecPopBack(blocks));
+        LibLines *lines = vecPopBack(blocks);
+        _libFreeLines(lines);
+        free(lines);
     }
-    free(blocks);
 }
 
 void libAddFilenamePair(LibFilenamePairs *pairs, const char *filenamePair)
@@ -128,7 +129,6 @@ void libFreeFilePairs(LibFilenamePairs *filenamePairs)
         free(pair->secondFilename);
         free(pair);
     }
-    free(filenamePairs);
 }
 
 void libFreeFiles(LibFiles *tmpFiles)
@@ -138,5 +138,4 @@ void libFreeFiles(LibFiles *tmpFiles)
         FILE *tmp = vecPopBack(tmpFiles);
         fclose(tmp);
     }
-    free(tmpFiles);
 }
