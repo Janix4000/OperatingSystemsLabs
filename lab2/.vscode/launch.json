@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zad01/main",
+            "program": "${workspaceFolder}/zad02/main",
             "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",

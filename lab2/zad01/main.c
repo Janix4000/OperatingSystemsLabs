@@ -6,11 +6,6 @@
 
 #include "lib_uni_file.h"
 
-#define LIB_EMPTY 0
-#define LIB_SYS 1
-#define LIB_C 2
-#define LIB_ERR -1
-
 int main(int argc, char **argv)
 {
     const char *fFilename = "./a";
