@@ -91,8 +91,8 @@ size_t libWrite(void *buffor, size_t size, size_t count, LibUniFile *file)
 
 int main(int argc, char **argv)
 {
-    const char *fFilename = "./zad01/a";
-    const char *sFilename = "./zad01/b";
+    const char *fFilename = "./a";
+    const char *sFilename = "./b";
 
     LibUniFile fFile;
     LibUniFile sFile;
@@ -115,10 +115,6 @@ int main(int argc, char **argv)
     int counts[2];
     char *begin[2] = {NULL, NULL};
 
-    // counts[0] = libRead(buffs[0], sizeof *buffs[0], buffSize, &fFile);
-    // counts[0] = libRead(buffs[1], sizeof *buffs[1], buffSize, &sFile);
-
-    setvbuf(stdout, NULL, _IONBF, 0);
     while (true)
     {
         if (begin[iPrint] == NULL)
