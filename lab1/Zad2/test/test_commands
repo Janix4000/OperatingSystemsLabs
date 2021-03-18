@@ -1,3 +1,4 @@
+--verbose
 --start_measure_time
 --create_table 25
 --merge_files ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small ./test/small:./test/small

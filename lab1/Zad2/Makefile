@@ -16,11 +16,11 @@ $(NAME)_dynamic_$(OPT): $(NAME).c
 run_tests: $(NAME)_static_$(OPT) $(NAME)_shared_$(OPT) $(NAME)_dynamic_$(OPT)
 	mkdir -p result
 	echo "running tests for static"
-	cat ./test/test_commands | xargs ./$(NAME)_static_$(OPT) | tee result/$(NAME)_static_$(OPT)_result.txt
+	cat ./test/test_commands | xargs ./$(NAME)_static_$(OPT)
 	echo "running tests for shared"
-	cat ./test/test_commands | xargs ./$(NAME)_shared_$(OPT) | tee result/$(NAME)_shared_$(OPT)_result.txt
+	cat ./test/test_commands | xargs ./$(NAME)_shared_$(OPT)
 	echo "running tests for dynamic"
-	cat ./test/test_commands | xargs ./$(NAME)_dynamic_$(OPT) | tee result/$(NAME)_dynamic_$(OPT)_result.txt
+	cat ./test/test_commands | xargs ./$(NAME)_dynamic_$(OPT)
 	make clean
 
 clean:
