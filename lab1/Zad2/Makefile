@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -O0 -g
+CFLAGS = -Wall -g
 OPT = O2
 NAME = main
 ARGS = --start_measure_time --create_table 3 --merge_files ./test/small:./test/small --remove_block 1 --remove_row 0 3 --print --stop_measure_time

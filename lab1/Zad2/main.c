@@ -54,7 +54,10 @@ char tableHasBeenCreated = 0;
 LibLinesBlocks blocks;
 struct tms tmsBeginTime;
 clock_t realBeginTime;
+
 char isMeasureRunning = 0;
+
+char verbose = 0;
 
 int main(int argc, char **argv)
 {
@@ -72,15 +75,21 @@ int main(int argc, char **argv)
 #undef LINK_FPTR
 #endif
 
-    printf("Nargs: %d.\n", argc);
     if (argc == 1)
     {
-        printf("No arguments in input.\n");
+        fprintf(stderr, "No arguments in input.\n");
         return -1;
     }
-
     argc--;
     argv++;
+
+    if (strcmp(*argv, "--verbose") == 0)
+    {
+        verbose = 1;
+
+        argc--;
+        argv++;
+    }
 
     while (argc)
     {
@@ -121,7 +130,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            printf("Not known command: \"%s\".\n", comm);
+            fprintf(stderr, "Not known command: \"%s\".\n", comm);
         }
     }
     libFreeLinesBlocksFptr(&blocks);
@@ -156,11 +165,13 @@ void createTable(int *argc, char ***argv)
         return;
     }
 
-    printf("Creating table...");
+    if (verbose)
+        printf("Creating table...");
     vecInitFptr(&blocks);
     vecReserveFptr(&blocks, nMaxPairs);
     tableHasBeenCreated = 1;
-    printf(" Table created[%d].\n", nMaxPairs);
+    if (verbose)
+        printf(" Table created[%d].\n", nMaxPairs);
 }
 void freeTable(int *argc, char ***argv)
 {
@@ -171,7 +182,8 @@ void freeTable(int *argc, char ***argv)
     }
     tableHasBeenCreated = 0;
     vecFreeFptr(&blocks);
-    printf("Table freed.\n");
+    if (verbose)
+        printf("Table freed.\n");
 }
 
 void mergeFiles(int *argc, char ***argv)
@@ -194,9 +206,9 @@ void mergeFiles(int *argc, char ***argv)
         }
 
         // merge
-        // printf("Adding %s pair to list...", filenamePair);
+        // if (verbose) printf("Adding %s pair to list...", filenamePair);
         libAddFilenamePairFptr(&filenamePairs, filenamePair);
-        // printf("Added \"%s\".\t", filenamePair);
+        // if (verbose) printf("Added \"%s\".\t", filenamePair);
 
         ++nToMerge;
 
@@ -209,7 +221,8 @@ void mergeFiles(int *argc, char ***argv)
     {
         fprintf(stderr, "--merge_table needs at least one valid pair of files.\n");
     }
-    printf("\n");
+    if (verbose)
+        printf("\n");
     if (!tableHasBeenCreated)
     {
         fprintf(stderr, "Table has not been created!\n");
@@ -217,7 +230,8 @@ void mergeFiles(int *argc, char ***argv)
     }
     if (inputIsValid)
     {
-        printf("Merging...\n");
+        if (verbose)
+            printf("Merging...\n");
         LibFiles tmpFiles;
         vecInitFptr(&tmpFiles);
         libMergeFilePairsFptr(&tmpFiles, &filenamePairs);
@@ -225,7 +239,8 @@ void mergeFiles(int *argc, char ***argv)
         libReadBlocksFromFilesFptr(&blocks, &tmpFiles);
         libFreeFilesFptr(&tmpFiles);
 
-        printf("Merged %d file pairs.\n", nToMerge);
+        if (verbose)
+            printf("Merged %d file pairs.\n", nToMerge);
     }
 
     libFreeFilePairsFptr(&filenamePairs);
@@ -261,7 +276,8 @@ void removeBlock(int *argc, char ***argv)
     }
 
     // remove block
-    printf("Removed block [%d].\n", blockIdx);
+    if (verbose)
+        printf("Removed block [%d].\n", blockIdx);
     libRemoveLineBlockAtFptr(&blocks, blockIdx);
 }
 void removeRow(int *argc, char ***argv)
@@ -308,18 +324,20 @@ void removeRow(int *argc, char ***argv)
         return;
     }
 
-    printf("Removed row [%d][%d].\n", blockIdx, rowIdx);
+    if (verbose)
+        printf("Removed row [%d][%d].\n", blockIdx, rowIdx);
     libRemoveLineInAtFptr(&blocks, blockIdx, rowIdx);
 }
 void startTimeMeasurement(int *argc, char ***argv)
 {
     if (isMeasureRunning)
     {
-        printf("Time measurement has already started!\n");
+        fprintf(stderr, "Time measurement has already started!\n");
     }
     else
     {
-        printf("Time measurement started.\n");
+        if (verbose)
+            printf("Time measurement started.\n");
         isMeasureRunning = 1;
         realBeginTime = times(&tmsBeginTime);
     }
@@ -328,7 +346,7 @@ void stopTimeMeasurement(int *argc, char ***argv)
 {
     if (!isMeasureRunning)
     {
-        printf("Time measurement has not started!\n");
+        fprintf(stderr, "Time measurement has not started!\n");
     }
     else
     {
@@ -339,8 +357,10 @@ void stopTimeMeasurement(int *argc, char ***argv)
         clock_t dtReal = realEndTime - realBeginTime;
         clock_t dtUser = tmsEndTime.tms_utime - tmsBeginTime.tms_utime;
         clock_t dtSys = tmsEndTime.tms_stime - tmsBeginTime.tms_stime;
-        printf("Time measurement stopped.\n");
-        printf("Real : User : System\n");
+        if (verbose)
+            printf("Time measurement stopped.\n");
+        if (verbose)
+            printf("Real : User : System\n");
         printf("%ld %ld %ld\n", dtReal, dtUser, dtSys);
         isMeasureRunning = 0;
     }
