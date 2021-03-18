@@ -4,7 +4,42 @@
 #include <unistd.h>
 #include <sys/times.h>
 
+#ifndef DYNAMIC
+#endif
 #include "lib_merge.h"
+
+#ifdef DYNAMIC
+#include <dlfcn.h>
+#endif
+
+#define RRMERGE_FUNCTIONS(PROCESS_DECL)                                                            \
+    PROCESS_DECL(size_t, libReadLineBlock, LibLinesBlocks *blocks, FILE *mergedLinesFile)          \
+    PROCESS_DECL(void, libReadBlocksFromFiles, LibLinesBlocks *blocks, LibFiles *tmpFiles)         \
+    PROCESS_DECL(void, libRemoveLineInAt, LibLinesBlocks *blocks, size_t blockIdx, size_t lineIdx) \
+    PROCESS_DECL(void, libRemoveLineBlockAt, LibLinesBlocks *blocks, size_t idx)                   \
+    PROCESS_DECL(void, libPrintLinesBlocks, LibLinesBlocks *blocks)                                \
+    PROCESS_DECL(void, libFreeLinesBlocks, LibLinesBlocks *blocks)                                 \
+                                                                                                   \
+    PROCESS_DECL(void, libAddFilenamePair, LibFilenamePairs *pairs, const char *filenamePair)      \
+    PROCESS_DECL(void, libMergeFilePairs, LibFiles *tmpFiles, LibFilenamePairs *filenamePairs)     \
+    PROCESS_DECL(void, libFreeFilePairs, LibFilenamePairs *filenamePairs)                          \
+                                                                                                   \
+    PROCESS_DECL(void, libFreeFiles, LibFiles *tmpFiles)                                           \
+                                                                                                   \
+    PROCESS_DECL(LibVector *, vecInit, LibVector *vector)                                          \
+    PROCESS_DECL(void, vecReserve, LibVector *vector, size_t capacity)                             \
+    PROCESS_DECL(void, vecClear, LibVector *vector)                                                \
+    PROCESS_DECL(void, vecFree, LibVector *vector)
+
+#ifdef DYNAMIC
+#define DEF_FPTR(ret, name, ...) ret (*name##Fptr)(__VA_ARGS__);
+#else
+#define DEF_FPTR(ret, name, ...) ret (*const name##Fptr)(__VA_ARGS__) = name;
+#endif
+
+RRMERGE_FUNCTIONS(DEF_FPTR)
+
+#undef DEF_FPTR
 
 void createTable(int *argc, char ***argv);
 void freeTable(int *argc, char ***argv);
@@ -23,7 +58,21 @@ char isMeasureRunning = 0;
 
 int main(int argc, char **argv)
 {
-    printf("Nargs: {%d}\n", argc);
+#ifdef DYNAMIC
+    void *dl_handle = dlopen("../Zad1/lib_merge/libmerge.so", RTLD_LAZY);
+    if (!dl_handle)
+    {
+        fprintf(stderr, "Couldnt open dl_handle.\n");
+        return -1;
+    }
+#define LINK_FPTR(ret, name, ...) name##Fptr = dlsym(dl_handle, #name);
+
+    RRMERGE_FUNCTIONS(LINK_FPTR)
+
+#undef LINK_FPTR
+#endif
+
+    printf("Nargs: %d.\n", argc);
     if (argc == 1)
     {
         printf("No arguments in input.\n");
@@ -75,7 +124,11 @@ int main(int argc, char **argv)
             printf("Not known command: \"%s\".\n", comm);
         }
     }
-    libFreeLinesBlocks(&blocks);
+    libFreeLinesBlocksFptr(&blocks);
+
+#ifdef DYNAMIC
+    dlclose(dl_handle);
+#endif
 
     return 0;
 }
@@ -104,10 +157,10 @@ void createTable(int *argc, char ***argv)
     }
 
     printf("Creating table...");
-    vecInit(&blocks);
-    vecReserve(&blocks, nMaxPairs);
+    vecInitFptr(&blocks);
+    vecReserveFptr(&blocks, nMaxPairs);
     tableHasBeenCreated = 1;
-    printf(" Table created.\n");
+    printf(" Table created[%d].\n", nMaxPairs);
 }
 void freeTable(int *argc, char ***argv)
 {
@@ -117,7 +170,7 @@ void freeTable(int *argc, char ***argv)
         return;
     }
     tableHasBeenCreated = 0;
-    vecFree(&blocks);
+    vecFreeFptr(&blocks);
     printf("Table freed.\n");
 }
 
@@ -127,7 +180,7 @@ void mergeFiles(int *argc, char ***argv)
     char inputIsValid = 1;
 
     LibFilenamePairs filenamePairs;
-    vecInit(&filenamePairs);
+    vecInitFptr(&filenamePairs);
 
     while (*argc > 0 && ***argv != '-')
     {
@@ -142,8 +195,8 @@ void mergeFiles(int *argc, char ***argv)
 
         // merge
         // printf("Adding %s pair to list...", filenamePair);
-        libAddFilenamePair(&filenamePairs, filenamePair);
-        // printf(" Added.\n");
+        libAddFilenamePairFptr(&filenamePairs, filenamePair);
+        // printf("Added \"%s\".\t", filenamePair);
 
         ++nToMerge;
 
@@ -156,6 +209,7 @@ void mergeFiles(int *argc, char ***argv)
     {
         fprintf(stderr, "--merge_table needs at least one valid pair of files.\n");
     }
+    printf("\n");
     if (!tableHasBeenCreated)
     {
         fprintf(stderr, "Table has not been created!\n");
@@ -165,16 +219,16 @@ void mergeFiles(int *argc, char ***argv)
     {
         printf("Merging...\n");
         LibFiles tmpFiles;
-        vecInit(&tmpFiles);
-        libMergeFilePairs(&tmpFiles, &filenamePairs);
+        vecInitFptr(&tmpFiles);
+        libMergeFilePairsFptr(&tmpFiles, &filenamePairs);
 
-        libReadBlocksFromFiles(&blocks, &tmpFiles);
-        libFreeFiles(&tmpFiles);
+        libReadBlocksFromFilesFptr(&blocks, &tmpFiles);
+        libFreeFilesFptr(&tmpFiles);
 
         printf("Merged %d file pairs.\n", nToMerge);
     }
 
-    libFreeFilePairs(&filenamePairs);
+    libFreeFilePairsFptr(&filenamePairs);
 }
 void removeBlock(int *argc, char ***argv)
 {
@@ -208,7 +262,7 @@ void removeBlock(int *argc, char ***argv)
 
     // remove block
     printf("Removed block [%d].\n", blockIdx);
-    libRemoveLineBlockAt(&blocks, blockIdx);
+    libRemoveLineBlockAtFptr(&blocks, blockIdx);
 }
 void removeRow(int *argc, char ***argv)
 {
@@ -255,7 +309,7 @@ void removeRow(int *argc, char ***argv)
     }
 
     printf("Removed row [%d][%d].\n", blockIdx, rowIdx);
-    libRemoveLineInAt(&blocks, blockIdx, rowIdx);
+    libRemoveLineInAtFptr(&blocks, blockIdx, rowIdx);
 }
 void startTimeMeasurement(int *argc, char ***argv)
 {
@@ -294,6 +348,10 @@ void stopTimeMeasurement(int *argc, char ***argv)
 
 void printBloks(int *argc, char ***argv)
 {
-
-    libPrintLinesBlocks(&blocks);
+    if (!tableHasBeenCreated)
+    {
+        fprintf(stderr, "Table has not been initialized.\n");
+        return;
+    }
+    libPrintLinesBlocksFptr(&blocks);
 }

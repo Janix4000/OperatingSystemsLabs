@@ -4,6 +4,7 @@
         "lib_merge.h": "c",
         "string": "c",
         "vector": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "typeinfo": "c"
     }
 }
