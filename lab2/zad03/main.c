@@ -3,8 +3,22 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 
 #include "lib_uni_file.h"
+
+bool isSq(int n)
+{
+    for (int a = 1; a * a <= n; a++)
+    {
+        if (a * a == n)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 int main(int argc, char **args)
 {
@@ -18,7 +32,13 @@ int main(int argc, char **args)
         return -1;
     }
 
-    const size_t buffSize = 4;
+    int nEven = 0;
+    LibUniFile aFile, bFile, cFile;
+    libOpen("a.txt", &aFile, LIB_C);
+    libOpen("b.txt", &bFile, LIB_C);
+    libOpen("c.txt", &cFile, LIB_C);
+
+    const size_t buffSize = 256;
     char buff[buffSize + 1];
     buff[buffSize] = '\0';
     char *itBuff = NULL;
@@ -52,7 +72,22 @@ int main(int argc, char **args)
             *itNum = '\0';
             itNum = num;
             int n = atoi(num);
-            printf("%d\n", n);
+            if (n % 2 == 0)
+            {
+                nEven++;
+            }
+            if ((n / 10) % 10 == 0 || (n / 10) % 10 == 7)
+            {
+                libWrite(num, sizeof *num, strlen(num), &bFile);
+                char endline = '\n';
+                libWrite(&endline, 1, 1, &bFile);
+            }
+            if (isSq(n))
+            {
+                libWrite(num, sizeof *num, strlen(num), &cFile);
+                char endline = '\n';
+                libWrite(&endline, 1, 1, &cFile);
+            }
         }
         if (itBuff)
         {
@@ -66,4 +101,7 @@ int main(int argc, char **args)
             }
         }
     }
+    char str[64];
+    sprintf(str, "Liczb parzystych jest %d", nEven);
+    libWrite(str, sizeof *str, strlen(str), &aFile);
 }
