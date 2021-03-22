@@ -5,3 +5,9 @@ lab1/Zad1/lib_merge/libmerge.so
 lab2/zad03/main
 lab2/.vscode/launch.json
 lab2/.vscode/launch.json
+lab2/lib/lib_reader_static.o
+*.o
+*.so
+*.a 
+lab2/lib/libunifile.a
+lab2/.vscode/launch.json
