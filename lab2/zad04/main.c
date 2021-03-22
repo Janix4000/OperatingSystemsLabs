@@ -73,8 +73,7 @@ int main(int argc, char **args)
                 text[t] = n2[j];
                 if (t == textSize - 1)
                 {
-                    // libWrite(text, sizeof (char), textSize, &output);
-                    printf(text);
+                    libWrite(text, sizeof(char), textSize, &output);
                 }
             }
             idxText = t;
@@ -85,16 +84,13 @@ int main(int argc, char **args)
             text[idxText] = c;
             if (idxText == textSize - 1)
             {
-                // libWrite(text, sizeof (char), textSize, &output);
-                printf(text);
+                libWrite(text, sizeof(char), textSize, &output);
             }
             idxText = (idxText + 1) % textSize;
         }
     }
     text[idxText] = '\0';
-    // libWrite(text, sizeof (char), idxText, &output);
-    printf(text);
-    printf("\n");
+    libWrite(text, sizeof(char), idxText, &output);
     libFreeReader(&input);
     libClose(&output);
 }
