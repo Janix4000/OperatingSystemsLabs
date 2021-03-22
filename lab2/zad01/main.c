@@ -8,8 +8,26 @@
 
 int main(int argc, char **argv)
 {
-    const char *fFilename = "./a";
-    const char *sFilename = "./b";
+    char fFilename[64];
+    char sFilename[64];
+    if (argc < 2)
+    {
+        printf("Podaj nazwe pierwszego pliku: ");
+        scanf("%s", fFilename);
+    }
+    else
+    {
+        strcpy(fFilename, argv[1]);
+    }
+    if (argc < 3)
+    {
+        printf("Podaj nazwe drugiego pliku: ");
+        scanf("%s", sFilename);
+    }
+    else
+    {
+        strcpy(sFilename, argv[2]);
+    }
 
     LibUniFile fFile;
     LibUniFile sFile;
