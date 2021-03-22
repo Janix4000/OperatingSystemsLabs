@@ -8,8 +8,13 @@
 
 int main(int argc, char **args)
 {
-    const char *fFilename = "./a";
-    const char c = 'b';
+    if (argc < 3)
+    {
+        printf("Expected 2 arguments.\n");
+        return -1;
+    }
+    const char c = args[1][0];
+    const char *fFilename = args[2];
 
     LibUniFile file;
     if (!libOpen(fFilename, &file, LIB_C))
@@ -19,7 +24,7 @@ int main(int argc, char **args)
         return -1;
     }
 
-    const size_t buffSize = 8;
+    const size_t buffSize = 256;
     char buff[buffSize + 1];
     char word[buffSize + 1];
     word[buffSize] = '\0';

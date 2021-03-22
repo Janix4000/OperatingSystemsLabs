@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g
 OPT = O0
 NAME = main
-ARGS = --kek
+ARGS ?= dane.txt kek.txt
 
 all: main run
 

@@ -10,8 +10,13 @@
 
 int main(int argc, char **args)
 {
-    const char *inputFilename = "./dane.txt";
-    const char *outputFilename = "./kek.txt";
+    if (argc <= 2)
+    {
+        printf("Expected 2 arguments.\n");
+        return -1;
+    }
+    const char *inputFilename = args[1];
+    const char *outputFilename = args[2];
 
     LibReader input;
     LibUniFile output;
@@ -40,15 +45,13 @@ int main(int argc, char **args)
         text[idxText] = c;
         if (c == '\n' || idxText == textSize - 1)
         {
-            int len = idxText + 1;
+            int len = idxText + 2;
             if (c == '\n')
             {
-                len = idxText;
+                len = idxText + 1;
             }
-            // text[idxText + 1] = '\n';
-            // libWrite(text, sizeof (char), len, &output);
-            text[len] = '\0';
-            printf("%s\n", text);
+            text[idxText + 1] = '\n';
+            libWrite(text, sizeof(char), len, &output);
             idxText = 0;
         }
         else
@@ -56,10 +59,7 @@ int main(int argc, char **args)
             idxText++;
         }
     }
-    // text[idxText] = '\n';
-    // libWrite(text, sizeof (char), idxText, &output);
-    text[idxText] = '\0';
-    printf("%s", text);
+    libWrite(text, sizeof(char), idxText, &output);
     libFreeReader(&input);
     libClose(&output);
 }

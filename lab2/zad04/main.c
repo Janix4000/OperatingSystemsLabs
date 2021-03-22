@@ -25,8 +25,15 @@ void get_kmp(int *tab, const char *txt)
 
 int main(int argc, char **args)
 {
-    const char *inputFilename = "./dane.txt";
-    const char *outputFilename = "./kek.txt";
+    if (argc <= 4)
+    {
+        printf("Expected 4 arguments.\n");
+        return -1;
+    }
+    const char *inputFilename = args[1];
+    const char *outputFilename = args[2];
+    const char *n1 = args[3];
+    const char *n2 = args[4];
 
     LibReader input;
     LibUniFile output;
@@ -45,9 +52,7 @@ int main(int argc, char **args)
         return -1;
     }
 
-    const char n1[] = "aaa";
-    const char n2[] = "[cccc]";
-    int tab[33];
+    int tab[65];
     get_kmp(tab, n1);
 
     const size_t textSize = 64;

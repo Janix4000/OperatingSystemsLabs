@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     char sFilename[64];
     if (argc < 2)
     {
-        printf("Podaj nazwe pierwszego pliku: ");
+        printf("First file name: ");
         scanf("%s", fFilename);
     }
     else
@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     }
     if (argc < 3)
     {
-        printf("Podaj nazwe drugiego pliku: ");
+        printf("Second file name: ");
         scanf("%s", sFilename);
     }
     else
