@@ -2,7 +2,7 @@
 
 int libOpenReader(const char *fileName, LibReader *reader, int bufforSize, char type)
 {
-    if (libOpen(fileName, &reader->file, type))
+    if (libOpen(fileName, &reader->file, type, "r"))
     {
         reader->buffor = (char *)malloc(bufforSize + 1);
         reader->buffor[bufforSize] = '\0';

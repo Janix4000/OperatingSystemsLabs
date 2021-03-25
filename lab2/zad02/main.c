@@ -6,27 +6,72 @@
 
 #include "lib_uni_file.h"
 
-int main(int argc, char **args)
+#include <sys/times.h>
+struct tms tmsBeginTime;
+clock_t realBeginTime;
+
+char verbose = 0;
+char isMeasureRunning = 0;
+
+void startTimeMeasurement(int *argc, char ***argv)
+{
+    if (isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has already started!\n");
+    }
+    else
+    {
+        if (verbose)
+            printf("Time measurement started.\n");
+        isMeasureRunning = 1;
+        realBeginTime = times(&tmsBeginTime);
+    }
+}
+void stopTimeMeasurement(int *argc, char ***argv, FILE *res)
+{
+    if (!isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has not started!\n");
+    }
+    else
+    {
+        struct tms tmsEndTime;
+        clock_t realEndTime;
+        realEndTime = times(&tmsEndTime);
+
+        clock_t dtReal = realEndTime - realBeginTime;
+        clock_t dtUser = tmsEndTime.tms_utime - tmsBeginTime.tms_utime;
+        clock_t dtSys = tmsEndTime.tms_stime - tmsBeginTime.tms_stime;
+        if (verbose)
+            printf("Time measurement stopped.\n");
+        if (verbose)
+            fprintf(res, "Real : User : System\n");
+        fprintf(res, "%ld %ld %ld\n", dtReal, dtUser, dtSys);
+        isMeasureRunning = 0;
+    }
+}
+
+void zad(int argc, char **argv, char type)
 {
     if (argc < 3)
     {
         printf("Expected 2 arguments.\n");
-        return -1;
+        return;
     }
-    const char c = args[1][0];
-    const char *fFilename = args[2];
+    const char c = argv[1][0];
+    const char *fFilename = argv[2];
 
     LibUniFile file;
-    if (!libOpen(fFilename, &file, LIB_C))
+    if (!libOpen(fFilename, &file, type, "r"))
     {
         if (file.type != LIB_ERR)
             libClose(&file);
-        return -1;
+        return;
     }
 
-    const size_t buffSize = 256;
+    const size_t buffSize = 32;
     char buff[buffSize + 1];
-    char word[buffSize + 1];
+    char word[256 + 1];
     word[buffSize] = '\0';
     buff[buffSize] = '\0';
     char *buffBeg = NULL;
@@ -64,7 +109,7 @@ int main(int argc, char **args)
         if (!endline)
         {
             strcpy(wordEnd, buffBeg);
-            wordEnd += buff + count - buffBeg;
+            wordEnd += count;
             buffBeg = NULL;
         }
         else
@@ -74,6 +119,20 @@ int main(int argc, char **args)
             wordEnd[len] = '\0';
             buffBeg += len + 1;
             shouldPrint = strchr(word, c) != NULL;
+            if (!shouldPrint)
+            {
+                wordEnd = word;
+            }
         }
     }
+}
+
+int main(int argc, char **argv)
+{
+    FILE *res = fopen("res_c", "w");
+    char type = LIB_C;
+    startTimeMeasurement(&argc, &argv);
+    zad(argc, argv, type);
+    stopTimeMeasurement(&argc, &argv, res);
+    fclose(res);
 }

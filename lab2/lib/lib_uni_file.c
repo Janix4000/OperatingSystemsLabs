@@ -1,10 +1,11 @@
 #include "lib_uni_file.h"
 
-int libOpen(const char *fileName, LibUniFile *uniFile, char type)
+int libOpen(const char *fileName, LibUniFile *uniFile, char type, const char *mode)
 {
     if (type == LIB_SYS)
     {
-        int id = open(fileName, O_RDWR);
+        int flag = mode[0] == 'r' ? O_RDONLY : O_WRONLY;
+        int id = open(fileName, flag);
         if (id < 0)
         {
             goto couldnt_open;
@@ -13,7 +14,7 @@ int libOpen(const char *fileName, LibUniFile *uniFile, char type)
     }
     else
     {
-        FILE *file = fopen(fileName, "r+");
+        FILE *file = fopen(fileName, mode);
         if (!file)
         {
             goto couldnt_open;

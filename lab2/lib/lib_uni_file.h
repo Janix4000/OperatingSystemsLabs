@@ -26,7 +26,7 @@ typedef struct
     char type;
 } LibUniFile;
 
-int libOpen(const char *fileName, LibUniFile *uniFile, char type);
+int libOpen(const char *fileName, LibUniFile *uniFile, char type, const char *mode);
 
 void libClose(LibUniFile *uniFile);
 

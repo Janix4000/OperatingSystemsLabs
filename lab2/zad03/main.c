@@ -7,6 +7,51 @@
 
 #include "lib_uni_file.h"
 
+#include <sys/times.h>
+struct tms tmsBeginTime;
+clock_t realBeginTime;
+
+char verbose = 0;
+char isMeasureRunning = 0;
+
+void startTimeMeasurement(int *argc, char ***argv)
+{
+    if (isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has already started!\n");
+    }
+    else
+    {
+        if (verbose)
+            printf("Time measurement started.\n");
+        isMeasureRunning = 1;
+        realBeginTime = times(&tmsBeginTime);
+    }
+}
+void stopTimeMeasurement(int *argc, char ***argv, FILE *res)
+{
+    if (!isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has not started!\n");
+    }
+    else
+    {
+        struct tms tmsEndTime;
+        clock_t realEndTime;
+        realEndTime = times(&tmsEndTime);
+
+        clock_t dtReal = realEndTime - realBeginTime;
+        clock_t dtUser = tmsEndTime.tms_utime - tmsBeginTime.tms_utime;
+        clock_t dtSys = tmsEndTime.tms_stime - tmsBeginTime.tms_stime;
+        if (verbose)
+            printf("Time measurement stopped.\n");
+        if (verbose)
+            fprintf(res, "Real : User : System\n");
+        fprintf(res, "%ld %ld %ld\n", dtReal, dtUser, dtSys);
+        isMeasureRunning = 0;
+    }
+}
+
 bool isSq(int n)
 {
     for (int a = 1; a * a <= n; a++)
@@ -20,25 +65,25 @@ bool isSq(int n)
     return false;
 }
 
-int main(int argc, char **args)
+void zad(int argc, char **args, char type)
 {
     const char *fFilename = "./dane.txt";
 
     LibUniFile file;
-    if (!libOpen(fFilename, &file, LIB_C))
+    if (!libOpen(fFilename, &file, type, "r"))
     {
         if (file.type != LIB_ERR)
             libClose(&file);
-        return -1;
+        return;
     }
 
     int nEven = 0;
     LibUniFile aFile, bFile, cFile;
-    libOpen("a.txt", &aFile, LIB_C);
-    libOpen("b.txt", &bFile, LIB_C);
-    libOpen("c.txt", &cFile, LIB_C);
+    libOpen("a.txt", &aFile, type, "w");
+    libOpen("b.txt", &bFile, type, "w");
+    libOpen("c.txt", &cFile, type, "w");
 
-    const size_t buffSize = 256;
+    const size_t buffSize = 32;
     char buff[buffSize + 1];
     buff[buffSize] = '\0';
     char *itBuff = NULL;
@@ -104,4 +149,18 @@ int main(int argc, char **args)
     char str[64];
     sprintf(str, "Liczb parzystych jest %d", nEven);
     libWrite(str, sizeof *str, strlen(str), &aFile);
+    libClose(&aFile);
+    libClose(&bFile);
+    libClose(&cFile);
+    libClose(&file);
+}
+
+int main(int argc, char **args)
+{
+    FILE *res = fopen("res_c", "w");
+    char type = LIB_C;
+    startTimeMeasurement(&argc, &args);
+    zad(argc, args, type);
+    stopTimeMeasurement(&argc, &args, res);
+    fclose(res);
 }

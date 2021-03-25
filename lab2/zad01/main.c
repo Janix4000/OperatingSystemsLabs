@@ -6,7 +6,52 @@
 
 #include "lib_uni_file.h"
 
-int main(int argc, char **argv)
+#include <sys/times.h>
+struct tms tmsBeginTime;
+clock_t realBeginTime;
+
+char verbose = 0;
+char isMeasureRunning = 0;
+
+void startTimeMeasurement(int *argc, char ***argv)
+{
+    if (isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has already started!\n");
+    }
+    else
+    {
+        if (verbose)
+            printf("Time measurement started.\n");
+        isMeasureRunning = 1;
+        realBeginTime = times(&tmsBeginTime);
+    }
+}
+void stopTimeMeasurement(int *argc, char ***argv, FILE *res)
+{
+    if (!isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has not started!\n");
+    }
+    else
+    {
+        struct tms tmsEndTime;
+        clock_t realEndTime;
+        realEndTime = times(&tmsEndTime);
+
+        clock_t dtReal = realEndTime - realBeginTime;
+        clock_t dtUser = tmsEndTime.tms_utime - tmsBeginTime.tms_utime;
+        clock_t dtSys = tmsEndTime.tms_stime - tmsBeginTime.tms_stime;
+        if (verbose)
+            printf("Time measurement stopped.\n");
+        if (verbose)
+            fprintf(res, "Real : User : System\n");
+        fprintf(res, "%ld %ld %ld\n", dtReal, dtUser, dtSys);
+        isMeasureRunning = 0;
+    }
+}
+
+void zad(int argc, char **argv, char type)
 {
     char fFilename[64];
     char sFilename[64];
@@ -31,16 +76,16 @@ int main(int argc, char **argv)
 
     LibUniFile fFile;
     LibUniFile sFile;
-    if (!libOpen(fFilename, &fFile, LIB_C) || !libOpen(sFilename, &sFile, LIB_C))
+    if (!libOpen(fFilename, &fFile, LIB_C, "r") || !libOpen(sFilename, &sFile, LIB_C, "r"))
     {
         if (fFile.type != LIB_ERR)
             libClose(&fFile);
         if (sFile.type != LIB_ERR)
             libClose(&sFile);
-        return -1;
+        return;
     }
 
-    const size_t buffSize = 127;
+    const size_t buffSize = 1024;
     char buffs[2][buffSize + 1];
     LibUniFile *files[2] = {&fFile, &sFile};
     buffs[0][buffSize] = '\0';
@@ -93,5 +138,17 @@ int main(int argc, char **argv)
         }
     }
     printf("\n");
+    libClose(&fFile);
+    libClose(&sFile);
+}
+
+int main(int argc, char **argv)
+{
+    FILE *res = fopen("res_c", "w");
+    char type = LIB_C;
+    startTimeMeasurement(&argc, &argv);
+    zad(argc, argv, type);
+    stopTimeMeasurement(&argc, &argv, res);
+    fclose(res);
     return 0;
 }

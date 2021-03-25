@@ -8,10 +8,15 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zad05/main",
-            "args": [],
+            "program": "${workspaceFolder}/zad04/main",
+            "args": [
+                "dane.txt",
+                "kek.txt",
+                "aaa",
+                "[ccc]"
+            ],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}/zad05",
+            "cwd": "${workspaceFolder}/zad04",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

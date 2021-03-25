@@ -8,6 +8,51 @@
 #include "lib_uni_file.h"
 #include "lib_reader.h"
 
+#include <sys/times.h>
+struct tms tmsBeginTime;
+clock_t realBeginTime;
+
+char verbose = 0;
+char isMeasureRunning = 0;
+
+void startTimeMeasurement(int *argc, char ***argv)
+{
+    if (isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has already started!\n");
+    }
+    else
+    {
+        if (verbose)
+            printf("Time measurement started.\n");
+        isMeasureRunning = 1;
+        realBeginTime = times(&tmsBeginTime);
+    }
+}
+void stopTimeMeasurement(int *argc, char ***argv, FILE *res)
+{
+    if (!isMeasureRunning)
+    {
+        fprintf(stderr, "Time measurement has not started!\n");
+    }
+    else
+    {
+        struct tms tmsEndTime;
+        clock_t realEndTime;
+        realEndTime = times(&tmsEndTime);
+
+        clock_t dtReal = realEndTime - realBeginTime;
+        clock_t dtUser = tmsEndTime.tms_utime - tmsBeginTime.tms_utime;
+        clock_t dtSys = tmsEndTime.tms_stime - tmsBeginTime.tms_stime;
+        if (verbose)
+            printf("Time measurement stopped.\n");
+        if (verbose)
+            fprintf(res, "Real : User : System\n");
+        fprintf(res, "%ld %ld %ld\n", dtReal, dtUser, dtSys);
+        isMeasureRunning = 0;
+    }
+}
+
 void get_kmp(int *tab, const char *txt)
 {
     int n = strlen(txt);
@@ -23,12 +68,12 @@ void get_kmp(int *tab, const char *txt)
     }
 }
 
-int main(int argc, char **args)
+void zad(int argc, char **args, char type)
 {
     if (argc <= 4)
     {
         printf("Expected 4 arguments.\n");
-        return -1;
+        return;
     }
     const char *inputFilename = args[1];
     const char *outputFilename = args[2];
@@ -37,25 +82,25 @@ int main(int argc, char **args)
 
     LibReader input;
     LibUniFile output;
-    if (!libOpenReader(inputFilename, &input, 8, LIB_C))
+    if (!libOpenReader(inputFilename, &input, 1024, type))
     {
         libFreeReader(&input);
-        return -1;
+        return;
     }
-    if (!libOpen(outputFilename, &output, LIB_C))
+    if (!libOpen(outputFilename, &output, type, "w"))
     {
         if (output.type != LIB_ERR)
         {
             libClose(&output);
             libFreeReader(&input);
         }
-        return -1;
+        return;
     }
 
-    int tab[65];
+    int *tab = calloc(sizeof *tab, strlen(n1) + 2);
     get_kmp(tab, n1);
 
-    const size_t textSize = 64;
+    const size_t textSize = 16;
     char text[textSize + 1];
     text[textSize] = '\0';
     int idxText = 0;
@@ -89,13 +134,30 @@ int main(int argc, char **args)
             text[idxText] = c;
             if (idxText == textSize - 1)
             {
-                libWrite(text, sizeof(char), textSize, &output);
+                int t = q + 1;
+                libWrite(text, sizeof(char), textSize - t, &output);
+                strcpy(text, text + textSize - t);
+                idxText = t;
             }
-            idxText = (idxText + 1) % textSize;
+            else
+            {
+                idxText = (idxText + 1) % textSize;
+            }
         }
     }
     text[idxText] = '\0';
     libWrite(text, sizeof(char), idxText, &output);
     libFreeReader(&input);
     libClose(&output);
+    free(tab);
+}
+
+int main(int argc, char **args)
+{
+    FILE *res = fopen("res_sys", "w");
+    char type = LIB_SYS;
+    startTimeMeasurement(&argc, &args);
+    zad(argc, args, type);
+    stopTimeMeasurement(&argc, &args, res);
+    fclose(res);
 }
