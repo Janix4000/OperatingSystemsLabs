@@ -7,11 +7,6 @@
 #ifndef DYNAMIC
 #endif
 #include "../../lab1/Zad1/lib_merge/lib_merge.h"
-
-#ifdef DYNAMIC
-#include <dlfcn.h>
-#endif
-
 #define RRMERGE_FUNCTIONS(PROCESS_DECL)                                                            \
     PROCESS_DECL(size_t, libReadLineBlock, LibLinesBlocks *blocks, FILE *mergedLinesFile)          \
     PROCESS_DECL(void, libReadBlocksFromFiles, LibLinesBlocks *blocks, LibFiles *tmpFiles)         \
@@ -31,11 +26,7 @@
     PROCESS_DECL(void, vecClear, LibVector *vector)                                                \
     PROCESS_DECL(void, vecFree, LibVector *vector)
 
-#ifdef DYNAMIC
-#define DEF_FPTR(ret, name, ...) ret (*name##Fptr)(__VA_ARGS__);
-#else
 #define DEF_FPTR(ret, name, ...) ret (*const name##Fptr)(__VA_ARGS__) = name;
-#endif
 
 RRMERGE_FUNCTIONS(DEF_FPTR)
 
@@ -61,20 +52,6 @@ char verbose = 0;
 
 int main(int argc, char **argv)
 {
-#ifdef DYNAMIC
-    void *dl_handle = dlopen("../Zad1/lib_merge/libmerge.so", RTLD_LAZY);
-    if (!dl_handle)
-    {
-        fprintf(stderr, "Couldnt open dl_handle.\n");
-        return -1;
-    }
-#define LINK_FPTR(ret, name, ...) name##Fptr = dlsym(dl_handle, #name);
-
-    RRMERGE_FUNCTIONS(LINK_FPTR)
-
-#undef LINK_FPTR
-#endif
-
     if (argc == 1)
     {
         fprintf(stderr, "No arguments in input.\n");
@@ -120,11 +97,6 @@ int main(int argc, char **argv)
         }
     }
     libFreeLinesBlocksFptr(&blocks);
-
-#ifdef DYNAMIC
-    dlclose(dl_handle);
-#endif
-
     return 0;
 }
 
