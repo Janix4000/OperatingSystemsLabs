@@ -9,8 +9,8 @@ $(NAME)_static_$(OPT): $(NAME).c
 
 run_tests: $(NAME)_static_$(OPT)
 	mkdir -p result
-	echo "running tests for static"
-	cat ./test/test_commands | xargs ./$(NAME)_static_$(OPT)
+	echo "running tests.txt for static"
+	cat ./test/test_commands.txt | xargs ./$(NAME)_static_$(OPT) | tee result/$(NAME)_static_without_fork_$(OPT).txt
 	make clean
 
 clean:
@@ -20,4 +20,9 @@ main: clean $(NAME)_static_$(OPT)
 	make run
 
 run:
-	./$(NAME)_static_$(OPT) $(ARGS)
+	cat ./test/test_commands.txt | xargs ./$(NAME)_static_$(OPT)
+
+vg: 
+	cat ./test/test_commands.txt | \ 
+	xargs vg \
+	./$(NAME)_static_$(OPT)

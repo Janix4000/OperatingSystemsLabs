@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/times.h>
+#include <sys/wait.h>
 
-#ifndef DYNAMIC
-#endif
+bool forking = false;
+
 #include "../../lab1/Zad1/lib_merge/lib_merge.h"
 #define RRMERGE_FUNCTIONS(PROCESS_DECL)                                                            \
     PROCESS_DECL(size_t, libReadLineBlock, LibLinesBlocks *blocks, FILE *mergedLinesFile)          \
@@ -40,6 +42,7 @@ void removeRow(int *argc, char ***argv);
 void startTimeMeasurement(int *argc, char ***argv);
 void stopTimeMeasurement(int *argc, char ***argv);
 void printBloks(int *argc, char ***argv);
+void printArg(int *argc, char ***argv);
 
 char tableHasBeenCreated = 0;
 LibLinesBlocks blocks;
@@ -87,9 +90,15 @@ int main(int argc, char **argv)
         }
         else if (strcmp(comm, "--start_measure_time") == 0)
         {
+            startTimeMeasurement(&argc, &argv);
         }
         else if (strcmp(comm, "--stop_measure_time") == 0)
         {
+            stopTimeMeasurement(&argc, &argv);
+        }
+        else if (strcmp(comm, "--print") == 0)
+        {
+            printArg(&argc, &argv);
         }
         else
         {
@@ -160,36 +169,63 @@ static void _libMergePairOfFilesToTmp(FILE *firstFile, FILE *secondFile, FILE *t
     rewind(tmp);
 }
 
-void mergeFilePairs(LibFiles *tmpFiles, LibFilenamePairs *filenamePairs)
+static void _handlePair(FilenamePair *pair, LibFiles *tmpFiles)
+{
+    FILE *tmp = tmpfile();
+    FILE *firstFile = fopen(pair->firstFilename, "r");
+    FILE *secondFile = fopen(pair->secondFilename, "r");
+    if (tmp && firstFile && secondFile)
+    {
+        _libMergePairOfFilesToTmp(firstFile, secondFile, tmp);
+        vecPushBack(tmpFiles, tmp);
+    }
+    else
+    {
+        fclose(tmp);
+        printf("Couldnt open files.\n");
+    }
+    if (firstFile)
+    {
+        fclose(firstFile);
+    }
+    if (secondFile)
+    {
+        fclose(secondFile);
+    }
+}
+
+static void _waitForChildren()
+{
+    pid_t wpid;
+    int status = 0;
+    while ((wpid = wait(&status)) > 0)
+        ;
+}
+
+void mergeFilePairs(LibFiles *tmpFiles, LibFilenamePairs *filenamePairs, bool usingFork)
 {
     for (size_t iPair = 0; iPair < filenamePairs->size; iPair++)
     {
-        if (fork() == 0)
+        for (size_t nTimes = 0; nTimes < blocks.capacity / filenamePairs->size; nTimes++)
         {
             FilenamePair *pair = filenamePairs->container[iPair];
-            FILE *tmp = tmpfile();
-            FILE *firstFile = fopen(pair->firstFilename, "r");
-            FILE *secondFile = fopen(pair->secondFilename, "r");
-            if (tmp && firstFile && secondFile)
+            if (usingFork)
             {
-                _libMergePairOfFilesToTmp(firstFile, secondFile, tmp);
-                vecPushBack(tmpFiles, tmp);
+                if (fork() == 0)
+                {
+                    _handlePair(pair, tmpFiles);
+                    exit(0);
+                }
             }
             else
             {
-                fclose(tmp);
-                printf("Couldnt open files.\n");
+                _handlePair(pair, tmpFiles);
             }
-            if (firstFile)
-            {
-                fclose(firstFile);
-            }
-            if (secondFile)
-            {
-                fclose(secondFile);
-            }
-            exit(0);
         }
+    }
+    if (usingFork)
+    {
+        _waitForChildren();
     }
 }
 
@@ -240,7 +276,7 @@ void mergeFiles(int *argc, char ***argv)
             printf("Merging...\n");
         LibFiles tmpFiles;
         vecInitFptr(&tmpFiles);
-        libMergeFilePairsFptr(&tmpFiles, &filenamePairs);
+        mergeFilePairs(&tmpFiles, &filenamePairs, forking);
 
         libReadBlocksFromFilesFptr(&blocks, &tmpFiles);
         libFreeFilesFptr(&tmpFiles);
@@ -250,6 +286,23 @@ void mergeFiles(int *argc, char ***argv)
     }
 
     libFreeFilePairsFptr(&filenamePairs);
+}
+
+void printArg(int *argc, char ***argv)
+{
+    if (verbose)
+    {
+        printf("Msg: ");
+    }
+    while (*argc > 0 && ***argv != '-')
+    {
+        char *toPrint = **argv;
+        printf("%s ", toPrint);
+
+        ++*argv;
+        --*argc;
+    }
+    printf("\n");
 }
 
 void startTimeMeasurement(int *argc, char ***argv)
@@ -274,6 +327,11 @@ void stopTimeMeasurement(int *argc, char ***argv)
     }
     else
     {
+        pid_t wpid;
+        int status = 0;
+        while ((wpid = wait(&status)) > 0)
+            ;
+
         struct tms tmsEndTime;
         clock_t realEndTime;
         realEndTime = times(&tmsEndTime);
