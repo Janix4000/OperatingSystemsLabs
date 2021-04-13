@@ -10,7 +10,7 @@
 char *MODE;
 int TESTING_SIGNAL;
 
-void test_signal_fork(void (*ignore_handler)(), void (*handle_handler)(), void (*mask_handler)(), void (*pending_handler)())
+void test_signals(void (*ignore_handler)(), void (*handle_handler)(), void (*mask_handler)(), void (*pending_handler)())
 {
     if (strcmp(MODE, "ignore") == 0)
     {
@@ -40,7 +40,7 @@ void test_ignore_fork()
     raise(TESTING_SIGNAL);
     printf("== Child run ==\n");
     sleep(1);
-    printf("== Child ==\n Signal succesfuly ignored\n");
+    printf("== Child == Signal succesfuly ignored\n");
 }
 
 void handler(int signum)
@@ -73,7 +73,7 @@ void test_mask_fork()
 
 void test()
 {
-    test_signal_fork(test_ignore_fork, test_handle_fork, test_mask_fork, test_pending_fork);
+    test_signals(test_ignore_fork, test_handle_fork, test_mask_fork, test_pending_fork);
 }
 
 int main(int argc, char **argv)
@@ -81,14 +81,14 @@ int main(int argc, char **argv)
 
     if (argc != 3)
     {
-        fprintf(stderr, "Expected two arguments.\n");
+        fprintf(stderr, "Expected two arguments, %d given.\n", argc - 1);
         exit(-1);
     }
 
     TESTING_SIGNAL = atoi(argv[1]);
     if (TESTING_SIGNAL == 0)
     {
-        fprintf(stderr, "Not suported signall \"%s\" given.\n");
+        fprintf(stderr, "Not suported signall \"%s\" given.\n", argv[1]);
         exit(-1);
     }
     MODE = argv[2];

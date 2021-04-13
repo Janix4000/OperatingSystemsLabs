@@ -7,8 +7,12 @@
 #include <string.h>
 #include <stdbool.h>
 
+void test_fork();
+void test_exec();
+
 char *MODE;
 const int TESTING_SIGNAL = SIGUSR1;
+void (*test)() = test_exec;
 
 void wait_for_children()
 {
@@ -18,7 +22,7 @@ void wait_for_children()
         ;
 }
 
-void test_signal_fork(void (*ignore_handler)(), void (*handle_handler)(), void (*mask_handler)(), void (*pending_handler)())
+void test_signals(void (*ignore_handler)(), void (*handle_handler)(), void (*mask_handler)(), void (*pending_handler)())
 {
     if (strcmp(MODE, "ignore") == 0)
     {
@@ -62,7 +66,7 @@ void test_ignore_fork()
         printf("== Parent run ==\n");
         raise(TESTING_SIGNAL);
         sleep(1);
-        printf("== Parent ==\nSignal succesfuly ignored\n");
+        printf("== Parent == Signal succesfuly ignored\n");
         wait_for_children();
     }
     else
@@ -70,9 +74,37 @@ void test_ignore_fork()
         raise(TESTING_SIGNAL);
         printf("== Child run ==\n");
         sleep(1);
-        printf("== Child ==\n Signal succesfuly ignored\n");
+        printf("== Child == Signal succesfuly ignored\n");
     }
     wait_for_children();
+}
+
+int exec()
+{
+    char signal[12];
+    sprintf(signal, "%d", TESTING_SIGNAL);
+    char *args[] = {"./exec.out", signal, MODE, NULL};
+    return execvp(args[0], args);
+}
+
+void test_ignore_exec()
+{
+    printf("\n==== Testing Ignore Signals (exec) ====\n");
+    struct sigaction act;
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(TESTING_SIGNAL, &act, NULL);
+
+    printf("== Parent run ==\n");
+    raise(TESTING_SIGNAL);
+    sleep(1);
+    printf("== Parent == Signal succesfuly ignored\n");
+    if (exec() < 0)
+    {
+        fprintf(stderr, "Error occured while creating child process\n");
+        exit(-1);
+    }
 }
 
 void handler(int signum)
@@ -109,6 +141,12 @@ void test_handle_fork()
     wait_for_children();
 }
 
+void test_handle_exec()
+{
+    fprintf(stderr, "handle is unsuported for exec testing.\n");
+    exit(-1);
+}
+
 void test_mask_fork()
 {
     printf("\n==== Testing Mask Signals (fork) ====\n");
@@ -142,6 +180,28 @@ void test_mask_fork()
     wait_for_children();
 }
 
+void test_mask_exec()
+{
+    printf("\n==== Testing Mask Signals (exec) ====\n");
+    sigset_t newmask, pendingMask;
+    sigemptyset(&newmask);
+    sigaddset(&newmask, TESTING_SIGNAL);
+    sigprocmask(SIG_SETMASK, &newmask, NULL);
+
+    bool isPending;
+    raise(TESTING_SIGNAL);
+    sleep(1);
+    sigpending(&pendingMask);
+    isPending = sigismember(&pendingMask, TESTING_SIGNAL);
+    printf("== Parent ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+
+    if (exec() < 0)
+    {
+        fprintf(stderr, "Error occured while creating child process\n");
+        exit(1);
+    }
+}
+
 void test_pending_fork()
 {
     printf("\n==== Testing Pending Signals (fork) ====\n");
@@ -157,15 +217,13 @@ void test_pending_fork()
     if ((childPID = fork()) < 0)
     {
         fprintf(stderr, "Error occured while creating child process\n");
-        exit(1);
+        exit(-1);
     }
     else if (childPID == 0)
     {
         sigpending(&pendingMask);
         isPending = sigismember(&pendingMask, TESTING_SIGNAL);
         printf("== Parent ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
-        while (wait(NULL) > 0)
-            ;
     }
     else
     {
@@ -176,9 +234,35 @@ void test_pending_fork()
     wait_for_children();
 }
 
+void test_pending_exec()
+{
+    printf("\n==== Testing Pending Signals (exec) ====\n");
+    sigset_t newmask, pendingMask;
+    sigemptyset(&newmask);
+    sigaddset(&newmask, TESTING_SIGNAL);
+    sigprocmask(SIG_SETMASK, &newmask, NULL);
+
+    raise(TESTING_SIGNAL);
+
+    sigpending(&pendingMask);
+    bool isPending = sigismember(&pendingMask, TESTING_SIGNAL);
+    printf("== Parent ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+
+    if (exec() < 0)
+    {
+        fprintf(stderr, "Error occured while creating child process\n");
+        exit(1);
+    }
+}
+
 void test_fork()
 {
-    test_signal_fork(test_ignore_fork, test_handle_fork, test_mask_fork, test_pending_fork);
+    test_signals(test_ignore_fork, test_handle_fork, test_mask_fork, test_pending_fork);
+}
+
+void test_exec()
+{
+    test_signals(test_ignore_exec, test_handle_exec, test_mask_exec, test_pending_exec);
 }
 
 int main(int argc, char **argv)
@@ -190,7 +274,7 @@ int main(int argc, char **argv)
     }
     MODE = argv[1];
 
-    test_fork();
+    test();
 
     return 0;
 }
