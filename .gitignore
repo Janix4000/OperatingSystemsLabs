@@ -30,3 +30,5 @@ lab3/zad02/test/med
 lab3/zad02/test/small
 lab3/zad02/test/test_commands.txt
 lab3/zad02/main_static_O0
+lab4/zad01/main_static_O0
+*.out
