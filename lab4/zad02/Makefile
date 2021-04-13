@@ -11,7 +11,7 @@ $(NAME)_static: $(NAME).c
 clean:
 	$(RM) -f *.o *.a *.so *.out
 
-main: clean $(NAME)_static exec
+main: clean $(NAME)_static
 	make run
 
 run:
