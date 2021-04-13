@@ -101,6 +101,38 @@ void test_handle()
     }
 }
 
+void test_mask()
+{
+    printf("\n==== Testing Mask Signals (fork) ====\n");
+    sigset_t newmask, pendingMask;
+    sigemptyset(&newmask);
+    sigaddset(&newmask, TESTING_SIGNAL);
+    sigprocmask(SIG_SETMASK, &newmask, NULL);
+
+    bool isPending;
+    raise(TESTING_SIGNAL);
+    sleep(1);
+    sigpending(&pendingMask);
+    isPending = sigismember(&pendingMask, TESTING_SIGNAL);
+    printf("== Parent ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+
+    pid_t childPID;
+    if ((childPID = fork()) < 0)
+    {
+        fprintf(stderr, "Error occured while creating child process\n");
+        exit(1);
+    }
+    else if (childPID > 0)
+    {
+        raise(TESTING_SIGNAL);
+        sleep(1);
+        sigpending(&pendingMask);
+        isPending = sigismember(&pendingMask, TESTING_SIGNAL);
+        printf("== Child ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+    }
+    exit(0);
+}
+
 void test_pending()
 {
     printf("\n==== Testing Pending Signals (fork) ====\n");
@@ -137,7 +169,7 @@ void test_pending()
 
 void test_itself()
 {
-    test_signal(test_ignore, test_handle, NULL, test_pending);
+    test_signal(test_ignore, test_handle, test_mask, test_pending);
 }
 
 void wait_for_children()
