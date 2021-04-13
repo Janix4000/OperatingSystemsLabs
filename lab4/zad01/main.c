@@ -35,6 +35,39 @@ void test_signal(void (*ignore_handler)(), void (*handle_handler)(), void (*mask
     }
 }
 
+void test_ignore()
+{
+    printf("\n==== Testing Ignore Signals (fork) ====\n");
+    struct sigaction act;
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(TESTING_SIGNAL, &act, NULL);
+    pid_t childPID;
+    if ((childPID = fork()) < 0)
+    {
+        fprintf(stderr, "Error occured while creating child process\n");
+        exit(1);
+    }
+    else if (childPID == 0)
+    {
+        printf("== Parent run ==\n");
+        raise(TESTING_SIGNAL);
+        sleep(1);
+        printf("== Parent ==\nSignal succesfuly ignored\n");
+        while (wait(NULL) > 0)
+            ;
+    }
+    else
+    {
+        raise(TESTING_SIGNAL);
+        printf("== Child run ==\n");
+        sleep(1);
+        printf("== Child ==\n Signal succesfuly ignored\n");
+    }
+    exit(0);
+}
+
 void test_pending()
 {
     printf("\n==== Testing Pending Signals (fork) ====\n");
@@ -71,7 +104,7 @@ void test_pending()
 
 void test_itself()
 {
-    test_signal(NULL, NULL, NULL, test_pending);
+    test_signal(test_ignore, NULL, NULL, test_pending);
 }
 
 void wait_for_children()
