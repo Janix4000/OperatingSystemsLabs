@@ -10,7 +10,15 @@
 char *MODE;
 const int TESTING_SIGNAL = SIGUSR1;
 
-void test_signal(void (*ignore_handler)(), void (*handle_handler)(), void (*mask_handler)(), void (*pending_handler)())
+void wait_for_children()
+{
+    pid_t wpid;
+    int status = 0;
+    while ((wpid = wait(&status)) > 0)
+        ;
+}
+
+void test_signal_fork(void (*ignore_handler)(), void (*handle_handler)(), void (*mask_handler)(), void (*pending_handler)())
 {
     if (strcmp(MODE, "ignore") == 0)
     {
@@ -35,7 +43,7 @@ void test_signal(void (*ignore_handler)(), void (*handle_handler)(), void (*mask
     }
 }
 
-void test_ignore()
+void test_ignore_fork()
 {
     printf("\n==== Testing Ignore Signals (fork) ====\n");
     struct sigaction act;
@@ -55,8 +63,7 @@ void test_ignore()
         raise(TESTING_SIGNAL);
         sleep(1);
         printf("== Parent ==\nSignal succesfuly ignored\n");
-        while (wait(NULL) > 0)
-            ;
+        wait_for_children();
     }
     else
     {
@@ -65,7 +72,7 @@ void test_ignore()
         sleep(1);
         printf("== Child ==\n Signal succesfuly ignored\n");
     }
-    exit(0);
+    wait_for_children();
 }
 
 void handler(int signum)
@@ -73,7 +80,7 @@ void handler(int signum)
     printf("Handled signal.\n");
 }
 
-void test_handle()
+void test_handle_fork()
 {
     printf("\n==== Testing Handle Signals (fork) ====\n");
     struct sigaction act;
@@ -99,9 +106,10 @@ void test_handle()
         sleep(1);
         exit(0);
     }
+    wait_for_children();
 }
 
-void test_mask()
+void test_mask_fork()
 {
     printf("\n==== Testing Mask Signals (fork) ====\n");
     sigset_t newmask, pendingMask;
@@ -129,11 +137,12 @@ void test_mask()
         sigpending(&pendingMask);
         isPending = sigismember(&pendingMask, TESTING_SIGNAL);
         printf("== Child ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+        exit(0);
     }
-    exit(0);
+    wait_for_children();
 }
 
-void test_pending()
+void test_pending_fork()
 {
     printf("\n==== Testing Pending Signals (fork) ====\n");
     sigset_t newmask, pendingMask;
@@ -164,20 +173,12 @@ void test_pending()
         isPending = sigismember(&pendingMask, TESTING_SIGNAL);
         printf("== Child ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
     }
-    exit(0);
+    wait_for_children();
 }
 
-void test_itself()
+void test_fork()
 {
-    test_signal(test_ignore, test_handle, test_mask, test_pending);
-}
-
-void wait_for_children()
-{
-    pid_t wpid;
-    int status = 0;
-    while ((wpid = wait(&status)) > 0)
-        ;
+    test_signal_fork(test_ignore_fork, test_handle_fork, test_mask_fork, test_pending_fork);
 }
 
 int main(int argc, char **argv)
@@ -189,8 +190,7 @@ int main(int argc, char **argv)
     }
     MODE = argv[1];
 
-    test_itself();
+    test_fork();
 
-    wait_for_children();
     return 0;
 }
