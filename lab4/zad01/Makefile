@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g
 OPT ?= O0
 NAME = main
-ARGS ?= ignore
+ARGS ?= handle
 # /agh/4_semestr/sysoby/lab3/zad03/
 
 $(NAME)_static_$(OPT): $(NAME).c
