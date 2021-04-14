@@ -5,6 +5,8 @@ NAME = main
 ARGS ?= 
 # /agh/4_semestr/sysoby/lab3/zad03/
 
+all: nodefer resethand info
+
 nodefer: clean nodefer.c
 	$(CC) $(CFLAGS) -$(OPT) -static nodefer.c -o nodefer.out
 	./nodefer.out
@@ -14,7 +16,6 @@ resethand: clean resethand.c
 	./resethand.out
 
 info: clean info.c
-
 	$(CC) $(CFLAGS) -$(OPT) -static info.c -o info.out
 	./info.out
 

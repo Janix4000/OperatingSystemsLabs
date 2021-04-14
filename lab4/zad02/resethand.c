@@ -5,6 +5,7 @@ void sig_handler(int sig);
 
 int main()
 {
+    printf("=== SA_RESETHAND ===\n");
     struct sigaction act;
     act.sa_handler = sig_handler;
     act.sa_flags = SA_RESETHAND;

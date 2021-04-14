@@ -6,6 +6,8 @@ void sig_handler(int signum, siginfo_t *info, void *ctx);
 
 int main()
 {
+    printf("=== SA_SIGINFO ===\n");
+
     struct sigaction act;
     act.sa_sigaction = sig_handler;
     act.sa_flags = SA_SIGINFO;

@@ -9,6 +9,7 @@ void sig2_handler(int sig);
 
 int main()
 {
+    printf("=== SA_NODEFER ===\n");
     {
         struct sigaction act;
         act.sa_handler = sig1_handler;
