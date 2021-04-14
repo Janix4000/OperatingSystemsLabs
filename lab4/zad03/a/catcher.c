@@ -19,6 +19,39 @@ volatile sig_atomic_t SIGNAL = SIGUSR1;
 volatile sig_atomic_t END_SIGNAL = SIGUSR2;
 volatile sig_atomic_t SENDER_TYPE = TYPE_KILL;
 
+char MODE[20];
+
+void handler(int sig_num, siginfo_t *info, void *ucontext);
+sigset_t block_signals(struct sigaction *act);
+void add_handlers(struct sigaction *act);
+
+void guess_mode();
+void receive_signals(sigset_t *mask);
+void send_signals();
+
+int main(int argc, char **argv)
+{
+    int PID = getpid();
+    printf("%d\n", PID);
+
+    struct sigaction act;
+    act.sa_sigaction = handler;
+    act.sa_flags = SA_SIGINFO;
+
+    sigset_t mask = block_signals(&act);
+    add_handlers(&act);
+
+    receive_signals(&mask);
+
+    send_signals();
+
+    guess_mode();
+
+    printf("=== Catcher | %s ===\nGot %ld signals\n", MODE, COUNT);
+
+    return 0;
+}
+
 void handler(int sig_num, siginfo_t *info, void *ucontext)
 {
     (void)ucontext;
@@ -43,6 +76,14 @@ void handler(int sig_num, siginfo_t *info, void *ucontext)
     }
 }
 
+void add_handlers(struct sigaction *act)
+{
+    sigaction(SIGUSR1, act, NULL);
+    sigaction(SIGUSR2, act, NULL);
+    sigaction(SIGRTMIN, act, NULL);
+    sigaction(SIGRTMIN + 1, act, NULL);
+}
+
 sigset_t block_signals(struct sigaction *act)
 {
     sigemptyset(&act->sa_mask);
@@ -58,35 +99,35 @@ sigset_t block_signals(struct sigaction *act)
     return mask;
 }
 
-void add_handlers(struct sigaction *act)
+void guess_mode()
 {
-    sigaction(SIGUSR1, act, NULL);
-    sigaction(SIGUSR2, act, NULL);
-    sigaction(SIGRTMIN, act, NULL);
-    sigaction(SIGRTMIN + 1, act, NULL);
+    switch (SENDER_TYPE)
+    {
+    case TYPE_SIGRT:
+        strcpy(MODE, "SIGRT");
+        break;
+    case TYPE_SIGQUEUE:
+        strcpy(MODE, "SIGQUEUE");
+        break;
+    case TYPE_KILL:
+        strcpy(MODE, "KILL");
+        break;
+
+    default:
+        break;
+    }
 }
 
-int main(int argc, char **argv)
+void receive_signals(sigset_t *mask)
 {
-    int PID = getpid();
-    printf("%d\n", PID);
-
-    struct sigaction act;
-    act.sa_sigaction = handler;
-    act.sa_flags = SA_SIGINFO;
-
-    sigset_t mask = block_signals(&act);
-    add_handlers(&act);
-
     while (!SHOULD_STOP)
     {
-        sigsuspend(&mask);
+        sigsuspend(mask);
     }
+}
 
-    if (SIGNAL == SIGUSR1)
-    {
-    }
-
+void send_signals()
+{
     if (SENDER_TYPE == TYPE_SIGQUEUE)
     {
         for (size_t i = 0; i < COUNT; ++i)
@@ -103,33 +144,4 @@ int main(int argc, char **argv)
         }
         kill(SENDER_PID, END_SIGNAL);
     }
-
-    char MODE[20];
-    switch (SENDER_TYPE)
-    {
-    case TYPE_SIGRT:
-        strcpy(MODE, "SIGRT");
-        break;
-    case TYPE_SIGQUEUE:
-        strcpy(MODE, "SIGQUEUE");
-        break;
-    case TYPE_KILL:
-        strcpy(MODE, "KILL");
-        break;
-
-    default:
-        break;
-    }
-
-    printf("=== Catcher | %s ===\nGot %ld signals\n", MODE, COUNT);
-
-    return 0;
-}
-
-void wait_for_children()
-{
-    pid_t wpid;
-    int status = 0;
-    while ((wpid = wait(&status)) > 0)
-        ;
 }
