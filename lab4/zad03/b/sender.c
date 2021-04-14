@@ -23,6 +23,8 @@ int TYPE;
 volatile int COUNT = 0;
 volatile int CATCHER_COUNT = 0;
 volatile sig_atomic_t SHOULD_STOP = false;
+volatile sig_atomic_t SHOULD_COUNT = false;
+volatile sig_atomic_t RECEIVED_PONG = false;
 
 void handler(int sig_num, siginfo_t *info, void *ctx);
 sigset_t block_signals(struct sigaction *act);
@@ -50,7 +52,7 @@ int main(int argc, char **argv)
     sigset_t mask = block_signals(&act);
     add_handlers(&act);
 
-    send_signals();
+    send_signals(&mask);
 
     receive_signals(&mask);
 
@@ -68,7 +70,11 @@ void handler(int sig_num, siginfo_t *info, void *ctx)
     (void)ctx;
     if (sig_num == SIGUSR1 || sig_num == SIGRTMIN)
     {
-        ++COUNT;
+        if (SHOULD_COUNT)
+        {
+            ++COUNT;
+        }
+        RECEIVED_PONG = true;
     }
     else if (sig_num == SIGUSR2 || sig_num == (SIGRTMIN + 1))
     {
@@ -141,13 +147,20 @@ void handle_arg(int argc, char **argv)
     }
 }
 
-void send_signals()
+void send_signals(sigset_t *mask)
 {
+    SHOULD_COUNT = false;
+    RECEIVED_PONG = false;
     if (TYPE == TYPE_SIGQUEUE)
     {
         for (size_t i = 0; i < N; ++i)
         {
             sigqueue(PID, SIGNAL, (union sigval){0});
+            if (!RECEIVED_PONG)
+            {
+                sigsuspend(mask);
+            }
+            RECEIVED_PONG = false;
         }
         sigqueue(PID, END_SIGNAL, (union sigval){0});
     }
@@ -156,6 +169,11 @@ void send_signals()
         for (size_t i = 0; i < N; ++i)
         {
             kill(PID, SIGNAL);
+            if (!RECEIVED_PONG)
+            {
+                sigsuspend(mask);
+            }
+            RECEIVED_PONG = false;
         }
         kill(PID, END_SIGNAL);
     }
@@ -163,8 +181,25 @@ void send_signals()
 
 void receive_signals(sigset_t *mask)
 {
+    SHOULD_COUNT = true;
+    RECEIVED_PONG = false;
     while (!SHOULD_STOP)
     {
-        sigsuspend(mask);
+        if (!RECEIVED_PONG)
+        {
+            sigsuspend(mask);
+        }
+        RECEIVED_PONG = false;
+        if (!SHOULD_STOP)
+        {
+            if (TYPE == TYPE_SIGQUEUE)
+            {
+                sigqueue(PID, SIGNAL, (union sigval){0});
+            }
+            else
+            {
+                kill(PID, SIGNAL);
+            }
+        }
     }
 }

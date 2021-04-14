@@ -18,6 +18,8 @@ volatile sig_atomic_t SENDER_PID = 0;
 volatile sig_atomic_t SIGNAL = SIGUSR1;
 volatile sig_atomic_t END_SIGNAL = SIGUSR2;
 volatile sig_atomic_t SENDER_TYPE = TYPE_KILL;
+volatile sig_atomic_t SHOULD_COUNT = true;
+volatile sig_atomic_t RECEIVED_PONG = false;
 
 char MODE[20];
 
@@ -43,7 +45,7 @@ int main(int argc, char **argv)
 
     receive_signals(&mask);
 
-    send_signals();
+    send_signals(&mask);
 
     guess_mode();
 
@@ -58,7 +60,11 @@ void handler(int sig_num, siginfo_t *info, void *ucontext)
     SENDER_PID = info->si_pid;
     if (sig_num == SIGUSR1 || sig_num == SIGRTMIN)
     {
-        ++COUNT;
+        if (SHOULD_COUNT)
+        {
+            ++COUNT;
+        }
+        RECEIVED_PONG = true;
         SIGNAL = sig_num;
     }
     else if (sig_num == SIGUSR2 || sig_num == (SIGRTMIN + 1))
@@ -120,20 +126,42 @@ void guess_mode()
 
 void receive_signals(sigset_t *mask)
 {
+    SHOULD_COUNT = true;
+    RECEIVED_PONG = false;
     while (!SHOULD_STOP)
     {
-        sigsuspend(mask);
+        if (!RECEIVED_PONG)
+        {
+            sigsuspend(mask);
+        }
+        RECEIVED_PONG = false;
+        if (SENDER_TYPE == TYPE_SIGQUEUE)
+        {
+            sigqueue(SENDER_PID, SIGNAL, (union sigval){0});
+        }
+        else
+        {
+            kill(SENDER_PID, SIGNAL);
+        }
     }
 }
 
-void send_signals()
+void send_signals(sigset_t *mask)
 {
+    SHOULD_COUNT = false;
+    RECEIVED_PONG = false;
     if (SENDER_TYPE == TYPE_SIGQUEUE)
     {
         for (size_t i = 0; i < COUNT; ++i)
         {
             sigqueue(SENDER_PID, SIGNAL, (union sigval){0});
+            if (!RECEIVED_PONG)
+            {
+                sigsuspend(mask);
+            }
+            RECEIVED_PONG = false;
         }
+
         sigqueue(SENDER_PID, END_SIGNAL, (union sigval){COUNT});
     }
     else
@@ -141,6 +169,11 @@ void send_signals()
         for (size_t i = 0; i < COUNT; ++i)
         {
             kill(SENDER_PID, SIGNAL);
+            if (!RECEIVED_PONG)
+            {
+                sigsuspend(mask);
+            }
+            RECEIVED_PONG = false;
         }
         kill(SENDER_PID, END_SIGNAL);
     }
