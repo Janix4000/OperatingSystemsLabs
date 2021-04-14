@@ -92,10 +92,12 @@ sigset_t block_signals(struct sigaction *act)
     sigset_t mask;
     sigfillset(&mask);
     sigdelset(&mask, SIGINT);
+
+    sigprocmask(SIG_SETMASK, &mask, NULL);
+
     sigdelset(&mask, SIGNAL);
     sigdelset(&mask, END_SIGNAL);
     act->sa_mask = mask;
-    sigprocmask(SIG_SETMASK, &mask, NULL);
     return mask;
 }
 
