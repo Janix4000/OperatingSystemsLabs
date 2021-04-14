@@ -24,6 +24,47 @@ volatile int COUNT = 0;
 volatile int CATCHER_COUNT = 0;
 volatile sig_atomic_t SHOULD_STOP = false;
 
+void handler(int sig_num, siginfo_t *info, void *ctx);
+sigset_t block_signals(struct sigaction *act);
+void add_handlers(struct sigaction *act);
+
+void handle_arg(int argc, char **argv);
+void send_signals();
+
+void receive_signals(sigset_t *mask);
+
+
+
+int main(int argc, char **argv)
+{
+    argc--;
+    argv++;
+
+    handle_arg(argc, argv);
+
+    SIGNAL = TYPE == TYPE_SIGQUEUE ? SIGRTMIN : SIGUSR1;
+    END_SIGNAL = TYPE == TYPE_SIGQUEUE ? SIGRTMIN + 1 : SIGUSR2;
+
+    struct sigaction act;
+    act.sa_sigaction = handler;
+    act.sa_flags = SA_SIGINFO;
+
+    sigset_t mask = block_signals(&act);
+    add_handlers(&act);
+
+    send_signals();
+
+    receive_signals(&mask);
+
+    printf("=== Sender | %s ==\nGot %d signals\nExpected %d signals\n", MODE, COUNT, N);
+    if (TYPE == TYPE_SIGQUEUE)
+    {
+        printf("Catcher received %d signals\n", CATCHER_COUNT);
+    }
+
+    return 0;
+}
+
 void handler(int sig_num, siginfo_t *info, void *ctx)
 {
     (void)ctx;
@@ -60,11 +101,8 @@ void add_handlers(struct sigaction *act)
     sigaction(END_SIGNAL, act, NULL);
 }
 
-int main(int argc, char **argv)
+void handle_arg(int argc, char **argv)
 {
-    argc--;
-    argv++;
-
     if (argc != 3)
     {
         fprintf(stderr, "Expected three arguments.\n");
@@ -86,7 +124,6 @@ int main(int argc, char **argv)
     }
 
     MODE = argv[2];
-
     if (strcmp(MODE, "SIGQUEUE") == 0)
     {
         TYPE = TYPE_SIGQUEUE;
@@ -104,17 +141,10 @@ int main(int argc, char **argv)
         fprintf(stderr, "Not known mode \"%s\".\n", MODE);
         exit(-1);
     }
+}
 
-    SIGNAL = TYPE == TYPE_SIGQUEUE ? SIGRTMIN : SIGUSR1;
-    END_SIGNAL = TYPE == TYPE_SIGQUEUE ? SIGRTMIN + 1 : SIGUSR2;
-
-    struct sigaction act;
-    act.sa_sigaction = handler;
-    act.sa_flags = SA_SIGINFO;
-
-    sigset_t mask = block_signals(&act);
-    add_handlers(&act);
-
+void send_signals()
+{
     if (TYPE == TYPE_SIGQUEUE)
     {
         for (size_t i = 0; i < N; ++i)
@@ -131,25 +161,12 @@ int main(int argc, char **argv)
         }
         kill(PID, END_SIGNAL);
     }
-
-    while (!SHOULD_STOP)
-    {
-        sigsuspend(&mask);
-    }
-
-    printf("=== Sender | %s ==\nGot %d signals\nExpected %d signals\n", MODE, COUNT, N);
-    if (TYPE == TYPE_SIGQUEUE)
-    {
-        printf("Catcher received %d signals\n", CATCHER_COUNT);
-    }
-
-    return 0;
 }
 
-void wait_for_children()
+void receive_signals(sigset_t *mask)
 {
-    pid_t wpid;
-    int status = 0;
-    while ((wpid = wait(&status)) > 0)
-        ;
+    while (!SHOULD_STOP)
+    {
+        sigsuspend(mask);
+    }
 }
