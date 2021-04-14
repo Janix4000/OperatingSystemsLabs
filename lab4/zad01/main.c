@@ -12,7 +12,7 @@ void test_exec();
 
 char *MODE;
 const int TESTING_SIGNAL = SIGUSR1;
-void (*test)() = test_exec;
+void (*test)() = test_fork;
 
 void wait_for_children()
 {
@@ -223,13 +223,13 @@ void test_pending_fork()
     {
         sigpending(&pendingMask);
         isPending = sigismember(&pendingMask, TESTING_SIGNAL);
-        printf("== Parent ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+        printf("== Child ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
     }
     else
     {
         sigpending(&pendingMask);
         isPending = sigismember(&pendingMask, TESTING_SIGNAL);
-        printf("== Child ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
+        printf("== Parent ==\n Signal Pending: %s\n", isPending ? "Yes" : "No");
     }
     wait_for_children();
 }
