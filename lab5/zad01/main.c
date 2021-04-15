@@ -23,10 +23,6 @@ int init_pipe_node(PipeNode *node, int argc, char **argv)
     {
         return -1;
     }
-    for (size_t i = 0; i < argc; i++)
-    {
-        node->args[i] = argv[i];
-    }
     memcpy(node->args, argv, sizeof(char *) * argc);
     node->args[argc] = NULL;
     node->argc = argc;
@@ -102,6 +98,47 @@ void exec_chain(PipeNode *head)
     } while (node);
 }
 
+typedef struct Block
+{
+    PipeNode *head;
+    PipeNode *last;
+} Block;
+
+void init_block(Block *block)
+{
+    block->head = NULL;
+    block->last = NULL;
+}
+
+void block_push_pip_node(Block *block, PipeNode *node)
+{
+    if (!block->head)
+    {
+        block->head = node;
+        block->last = node;
+    }
+    else
+    {
+        link_nodes(block->last, node);
+        block->last = node;
+    }
+}
+
+void link_blocks(Block **blocks, int n)
+{
+    for (size_t i = 0; i < n - 1; i++)
+    {
+        Block *prev = blocks[i];
+        Block *next = blocks[i + 1];
+
+        link_nodes(prev->last, next->head);
+    }
+}
+
+void unlink_blocks(Block **blocks, int n)
+{
+}
+
 int main(int argc, char **argv)
 {
     // cat /etc/passwd | wc -l | grep '31'
@@ -110,14 +147,14 @@ int main(int argc, char **argv)
     init_pipe_node(&n1, 2, a1);
     char *a2[] = {"wc", "-l"};
     init_pipe_node(&n2, 2, a2);
-    char *a3[] = {"grep", "31"};
+    char *a3[] = {"grep", "aaaa"};
     init_pipe_node(&n3, 2, a3);
     char *a4[] = {"grep", "3"};
     init_pipe_node(&n4, 2, a4);
 
     link_nodes(&n1, &n2);
-    link_nodes(&n2, &n3);
-    link_nodes(&n3, &n4);
+    // link_nodes(&n2, &n3);
+    // link_nodes(&n3, &n4);
 
     exec_chain(&n1);
     return 0;
