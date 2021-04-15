@@ -33,3 +33,5 @@ lab3/zad02/main_static_O0
 *.txt
 *.out
 *.tar
+*.json
+lab5/.vscode/launch.json
