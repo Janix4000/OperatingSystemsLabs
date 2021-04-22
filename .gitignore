@@ -39,3 +39,5 @@ lab4/zad01/raport2.txt
 lab4/zad03/b/raport.txt
 lab4/zad03/a/raport.txt
 lab.tar
+*.json
+lab5/.vscode/launch.json
