@@ -76,8 +76,23 @@ void interpret_msg(msgbuf *msg)
     case L_CONNECT:
     {
         strncpy((char *)&msg_queue, msg->mtext, sizeof(int));
+        msg_id = msg->mtext[sizeof(int)];
+        printf("Polaczono z %d\n", msg_id);
     }
-    // connect_msg(msg);
+    break;
+    case L_DISCONNECT:
+    {
+        msg_queue = -1;
+    }
+    break;
+    case L_MSG:
+    {
+        printf("Received: \"%s\"\n", msg->mtext);
+        msg->mtype = L_MSG;
+        strcpy(msg->mtext, "Co tam?");
+        send_msg_to(msg, msg_queue);
+        sleep(3);
+    }
     break;
     default:
         break;
@@ -92,6 +107,7 @@ int main(int argc, char const *argv[])
         exit(-1);
     }
     own_queue = create_queue(argv[1]);
+    printf("My queue: %d\n", own_queue);
     apply_destructor(destructor, sigc);
 
     while ((server_queue = open_queue("./id")) == -1)
@@ -101,23 +117,27 @@ int main(int argc, char const *argv[])
     }
 
     ask_server_for_init();
-    ask_server_for_list();
 
-    if (msg_queue == -1)
+    bool keep_chating = true;
+
+    while (keep_chating)
     {
-        wait_for_connect();
-    }
+        ask_server_for_list();
 
-    while (wait_for_msg_from(&msg, own_queue) != -1)
-    {
-        printf("Received type: %ld\n", msg.mtype);
-        interpret_msg(&msg);
-    }
+        if (msg_queue == -1)
+        {
+            wait_for_connect();
+        }
+        msg.mtype = L_MSG;
+        strcpy(msg.mtext, "Siema!");
+        send_msg_to(&msg, msg_queue);
 
-    char line[100];
-    char *it = line;
-    size_t n = 100;
-    getline(&it, &n, stdin);
+        while (wait_for_msg_from(&msg, own_queue) != -1 && msg_queue != -1)
+        {
+            interpret_msg(&msg);
+        }
+        printf("Obcy opuscil chat...\n");
+    }
 
     return 0;
 }
@@ -151,6 +171,7 @@ void ask_server_for_connect(int other_id)
 }
 void wait_for_connect()
 {
+    printf("Czekanie na nowego rozmowce...\n");
     wait_for_msg_from(&msg, own_queue);
     interpret_msg(&msg);
 }

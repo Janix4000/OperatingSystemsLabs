@@ -37,11 +37,17 @@ size_t n_connected = 0;
 
 char add_client_to_lists(L_QUEUE queue);
 L_QUEUE remove_client_from_lists(char id);
-L_QUEUE connect_client_in_lists(char id);
-L_QUEUE disconnect_client_from_lists(char id);
+L_QUEUE make_client_avaible(char id);
+L_QUEUE make_client_unavaible(char id);
 void print_lists();
 L_QUEUE get_queue(char id);
 bool is_avaible(char id);
+client_pair *find_in_pairs(char id);
+char get_second_id_from_pair(char id);
+void disconnect_pair(char id);
+void disconnect_one_from_pair(char id);
+void add_pair_to_lists(char id, char other_id);
+void remove_pair(char id);
 
 void init_msg(msgbuf *msg)
 {
@@ -57,20 +63,17 @@ void init_msg(msgbuf *msg)
     msg->mtext[1] = '\0';
 
     send_msg_to(msg, q);
-    print_lists();
 }
-
 void stop_client_msg(msgbuf *msg)
 {
     char id = msg->mtext[0];
-    // client_pair *pair = find_in_pairs(id);
+    if (!is_avaible(id))
+    {
+        char other_id = get_second_id_from_pair(id);
+        disconnect_one_from_pair(other_id);
+        remove_pair(id);
+    }
     remove_client_from_lists(id);
-    // if (pair)
-    // {
-    //     char other_id = pair->first_id ^ pair->second_id ^ id;
-    //     disconnect_client(other_id);
-    // }
-    print_lists();
 }
 void list_msg(msgbuf *msg)
 {
@@ -99,33 +102,30 @@ void connect_msg(msgbuf *msg)
         return;
     }
 
-    msg->mtype = L_CONNECT;
-    union
-    {
-        int q;
-        char tag[sizeof(int)];
-    } data;
+    add_pair_to_lists(id, other_id);
 
-    data.q = other_q;
-    strncpy(msg->mtext, data.tag, sizeof(int));
+    msg->mtype = L_CONNECT;
+    strncpy(msg->mtext, (char *)&other_q, sizeof(int));
+    msg->mtext[sizeof(int)] = other_id;
     send_msg_to(msg, q);
 
-    data.q = q;
-    strncpy(msg->mtext, data.tag, sizeof(int));
+    msg->mtype = L_CONNECT;
+    strncpy(msg->mtext, (char *)&q, sizeof(int));
+    msg->mtext[sizeof(int)] = id;
     send_msg_to(msg, other_q);
 }
 
-// L_QUEUE disconnect_client(char id) {
-//     client_pair* pair = find_in_pairs(id);
-//     L_QUEUE q = connect_client_to_lists(id);
-//     if(pair) {
-//         char other_id = pair->first_id ^ pair->second_id ^ id;
-//         disconnect_client(other_id);
-//     }
+void disconnect_msg(msgbuf *msg)
+{
+    char id = msg->mtext[0];
+    if (is_avaible(id))
+    {
+        fprintf(stderr, "Client is already avaible\n");
+        return;
+    }
 
-//     msg.mtype = L_DISCONNECT;
-//     send_msg_to(&msg, q);
-// }
+    disconnect_pair(id);
+}
 
 void interpret_msg(msgbuf *msg)
 {
@@ -143,6 +143,9 @@ void interpret_msg(msgbuf *msg)
     case L_CONNECT:
         connect_msg(msg);
         break;
+    case L_DISCONNECT:
+        disconnect_msg(msg);
+        break;
     default:
         break;
     }
@@ -153,13 +156,16 @@ void sigc(int);
 
 int main(int argc, char const *argv[])
 {
+    close_queue(32805);
+
     server_queue = create_queue("./id");
+    printf("My queue: %d\n", server_queue);
     apply_destructor(destructor, sigc);
 
     while (wait_for_msg_from(&msg, server_queue) != -1)
     {
-        printf("Received type: %ld\n", msg.mtype);
         interpret_msg(&msg);
+        print_lists();
     }
 
     perror("msgrcv");
@@ -194,30 +200,55 @@ bool is_avaible(char id)
     return find_in_clients(avaible_clients, n_avaible, id) != NULL;
 }
 
-// client_pair *find_in_pairs(char id)
-// {
-//     for (size_t i = 0; i < n_connected; i++)
-//     {
-//         if (connected_pairs[i].first_id == id || connected_pairs[i].second_id == id)
-//         {
-//             return connected_pairs + i;
-//         }
-//     }
-//     return NULL;
-// }
+client_pair *find_in_pairs(char id)
+{
+    for (size_t i = 0; i < n_connected; i++)
+    {
+        if (connected_pairs[i].first_id == id || connected_pairs[i].second_id == id)
+        {
+            return connected_pairs + i;
+        }
+    }
+    return NULL;
+}
 
-// char remove_pair_from_list(char id) {
-//     client_pair *pair = find_in_pairs(id);
-//     if (pair)
-//     {
-//         char other_id = pair->first_id ^ pair->second_id ^ id;
-//         *pair = connected_pairs[--n_connected];
-//         return other_id;
-//     }
-//     return -1;
-// }
+char get_second_id_from_pair(char id)
+{
+    client_pair *pair = find_in_pairs(id);
+    return pair->first_id ^ pair->second_id ^ id;
+}
 
-L_QUEUE disconnect_client_from_lists(char id)
+void disconnect_one_from_pair(char id)
+{
+    int q = make_client_avaible(id);
+    msg.mtype = L_DISCONNECT;
+    send_msg_to(&msg, q);
+}
+
+void remove_pair(char id)
+{
+    client_pair *pair = find_in_pairs(id);
+    *pair = connected_pairs[--n_connected];
+}
+
+void disconnect_pair(char id)
+{
+    char other_id = get_second_id_from_pair(id);
+    disconnect_one_from_pair(id);
+    disconnect_one_from_pair(other_id);
+
+    remove_pair(id);
+}
+
+void add_pair_to_lists(char id, char other_id)
+{
+    client_pair pair = {id, other_id};
+    connected_pairs[n_connected++] = pair;
+    make_client_unavaible(id);
+    make_client_unavaible(other_id);
+}
+
+L_QUEUE make_client_unavaible(char id)
 {
     client *it = find_in_clients(avaible_clients, n_avaible, id);
     if (it)
@@ -235,7 +266,7 @@ L_QUEUE disconnect_client_from_lists(char id)
     }
 }
 
-L_QUEUE connect_client_in_lists(char id)
+L_QUEUE make_client_avaible(char id)
 {
     client *it = find_in_clients(not_avaible_clients, n_not_avaible, id);
     if (it)
@@ -243,8 +274,6 @@ L_QUEUE connect_client_in_lists(char id)
         L_QUEUE queue = it->queue;
         avaible_clients[n_avaible++] = *it;
         *it = not_avaible_clients[--n_not_avaible];
-
-        // remove_pair_from_list(id);
 
         return queue;
     }
@@ -283,15 +312,16 @@ L_QUEUE remove_client_from_lists(char id)
 
 void stop_all_clients()
 {
-    msg.mtype = L_STOP;
     msg.mtext[0] = '\0';
     while (n_avaible)
     {
+        msg.mtype = L_STOP;
         L_QUEUE q = remove_client_from_lists(avaible_clients[0].id);
         send_msg_to(&msg, q);
     }
     while (n_not_avaible)
     {
+        msg.mtype = L_STOP;
         L_QUEUE q = remove_client_from_lists(not_avaible_clients[0].id);
         send_msg_to(&msg, q);
     }
@@ -309,7 +339,7 @@ char add_client_to_lists(L_QUEUE queue)
 
 void print_lists()
 {
-    printf("[");
+    printf("Avaible :[");
     if (n_avaible)
     {
         for (size_t i = 0; i < n_avaible - 1; i++)
@@ -318,7 +348,7 @@ void print_lists()
         }
         printf("%d", avaible_clients[n_avaible - 1].id);
     }
-    printf("]\n[");
+    printf("]\nUnavaible[");
     if (n_not_avaible)
     {
         for (size_t i = 0; i < n_not_avaible - 1; i++)
@@ -327,7 +357,7 @@ void print_lists()
         }
         printf("%d", not_avaible_clients[n_not_avaible - 1].id);
     }
-    printf("]\n");
+    printf("]\n\n");
 }
 
 void destructor(void)
