@@ -21,7 +21,7 @@ int msg_queue = -1;
 msgbuf msg;
 char id = -1;
 
-bool ask_server_for_list();
+void ask_server_for_list();
 
 void destructor(void);
 void sigc(int sig_no);
@@ -45,15 +45,51 @@ void ask_server_for_init()
     printf("My new id: %d\n", id);
 }
 
-void ask_server_for_connect(int id);
+void ask_server_for_connect(int other_id)
+{
+    msg.mtype = L_CONNECT;
+    msg.mtext[0] = id;
+    msg.mtext[1] = other_id;
+    send_msg_to(&msg, server_queue);
+}
 void wait_for_connect();
 
-void ask_server_for_disconnect();
+void ask_server_for_disconnect()
+{
+    msg.mtype = L_DISCONNECT;
+    msg.mtext[0] = id;
+    send_msg_to(&msg, server_queue);
+}
 void ask_server_for_stop()
 {
     msg.mtype = L_STOP;
     msg.mtext[0] = id;
     send_msg_to(&msg, server_queue);
+}
+
+void ask_server_for_list()
+{
+    msg.mtype = L_LIST;
+    msg.mtext[0] = id;
+    send_msg_to(&msg, server_queue);
+
+    wait_for_msg_from(&msg, own_queue);
+    char *list = msg.mtext;
+    char chosen_id = -1;
+    for (char *it = list; *it; ++it)
+    {
+        if (*it == id)
+        {
+            continue;
+        }
+        chosen_id = *it;
+        printf("I will connect to this dude: %d\n", *it);
+        break;
+    }
+    if (chosen_id == -1)
+    {
+        printf("No hot mommies in neighbourhood ;'\\\n");
+    }
 }
 
 void server_down()
@@ -86,6 +122,7 @@ int main(int argc, char const *argv[])
     }
 
     ask_server_for_init();
+    ask_server_for_list();
 
     while (wait_for_msg_from(&msg, own_queue) != -1)
     {
