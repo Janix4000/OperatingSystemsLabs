@@ -2,14 +2,18 @@ CC = gcc
 CFLAGS = -Wall -g
 OPT = O0
 ARGS ?=
+LIB = ./lib
 
 all: clean server sender
 
-server: server.c
-	$(CC) $(CFLAGS) -$(OPT) -static server.c -o server.out
+ips: $(LIB)/ips.c
+	$(CC) $(CFLAGS) -$(OPT) -c $(LIB)/ips.c
 
-sender: sender.c
-	$(CC) $(CFLAGS) -$(OPT) -static sender.c -o sender.out
+server: ips server.c
+	$(CC) $(CFLAGS) -$(OPT) -static server.c ips.o -o server.out
+
+sender: ips sender.c
+	$(CC) $(CFLAGS) -$(OPT) -static sender.c ips.o -o sender.out
 
 clean:
 	$(RM) -f *.o *.a *.so *.out
