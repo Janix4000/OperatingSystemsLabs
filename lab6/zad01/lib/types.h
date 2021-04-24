@@ -11,7 +11,9 @@
 
 #include <errno.h>
 
-#define L_COUNT 6
+#define L_COUNT 8
+#define L_FAIL 7
+#define L_MSG 6
 #define L_INIT 5
 #define L_CONNECT 4
 #define L_LIST 3
