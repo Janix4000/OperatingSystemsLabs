@@ -41,16 +41,14 @@ L_QUEUE connect_client_in_lists(char id);
 L_QUEUE disconnect_client_from_lists(char id);
 void print_lists();
 L_QUEUE get_queue(char id);
+bool is_avaible(char id);
 
 void init_msg(msgbuf *msg)
 {
-    union
-    {
-        int q;
-        char tag[sizeof(int)];
-    } data;
-    strncpy(data.tag, msg->mtext, sizeof(int));
-    char id = add_client_to_lists(data.q);
+    L_QUEUE q;
+    strncpy((char *)&q, msg->mtext, sizeof(int));
+
+    char id = add_client_to_lists(q);
 
     printf("Client init received, given id: %d\n", id);
 
@@ -58,7 +56,7 @@ void init_msg(msgbuf *msg)
     msg->mtext[0] = id;
     msg->mtext[1] = '\0';
 
-    send_msg_to(msg, data.q);
+    send_msg_to(msg, q);
     print_lists();
 }
 
@@ -87,6 +85,35 @@ void list_msg(msgbuf *msg)
 
     send_msg_to(msg, q);
 }
+void connect_msg(msgbuf *msg)
+{
+    char id = msg->mtext[0];
+    char other_id = msg->mtext[1];
+    L_QUEUE q = get_queue(id);
+    L_QUEUE other_q = get_queue(other_id);
+
+    if (!is_avaible(id) || !is_avaible(other_id))
+    {
+        msg->mtype = L_FAIL;
+        send_msg_to(msg, q);
+        return;
+    }
+
+    msg->mtype = L_CONNECT;
+    union
+    {
+        int q;
+        char tag[sizeof(int)];
+    } data;
+
+    data.q = other_q;
+    strncpy(msg->mtext, data.tag, sizeof(int));
+    send_msg_to(msg, q);
+
+    data.q = q;
+    strncpy(msg->mtext, data.tag, sizeof(int));
+    send_msg_to(msg, other_q);
+}
 
 // L_QUEUE disconnect_client(char id) {
 //     client_pair* pair = find_in_pairs(id);
@@ -112,6 +139,9 @@ void interpret_msg(msgbuf *msg)
         break;
     case L_LIST:
         list_msg(msg);
+        break;
+    case L_CONNECT:
+        connect_msg(msg);
         break;
     default:
         break;
@@ -157,6 +187,11 @@ L_QUEUE get_queue(char id)
         it = find_in_clients(not_avaible_clients, n_not_avaible, id);
     }
     return it->queue;
+}
+
+bool is_avaible(char id)
+{
+    return find_in_clients(avaible_clients, n_avaible, id) != NULL;
 }
 
 // client_pair *find_in_pairs(char id)
