@@ -24,7 +24,7 @@ void apply_destructor(void (*destructor)(void), void (*sigc)(int))
 
 L_QUEUE open_queue(const char *path)
 {
-    key_t key = ftok("./id", L_PROJ);
+    key_t key = ftok(path, L_PROJ);
     L_QUEUE queue = msgget(key, IPC_CREAT | 0666);
     if (queue == -1)
     {

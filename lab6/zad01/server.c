@@ -75,13 +75,11 @@ int main(int argc, char const *argv[])
 
     while (wait_for_msg_from(&msg, server_queue) != -1)
     {
+        printf("Received type: %ld\n", msg.mtype);
         interpret_msg(&msg);
-        printf("Received: \"%s\", type: %ld\n", msg.mtext, msg.mtype);
-        break;
     }
 
     perror("msgrcv");
-    destructor();
 
     return 0;
 }

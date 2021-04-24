@@ -52,10 +52,16 @@ void ask_server_for_stop();
 int main(int argc, char const *argv[])
 {
     server_queue = open_queue("./id");
+    printf("Server queue %d\n", server_queue);
     own_queue = open_queue("./a");
-    apply_destructor(destructor, sigc);
+    printf("Own queue %d\n", own_queue);
+    //apply_destructor(destructor, sigc);
 
     ask_server_for_init();
+
+    char *line = msg.mtext;
+    size_t line_size = sizeof(msg.mtext);
+    getline(&line, &line_size, stdin);
 
     // ask_server_for_list();
     // connect_to_first_open();
@@ -63,9 +69,6 @@ int main(int argc, char const *argv[])
     // int bytes;
 
     // msg.mtype = 10;
-
-    // char *line = msg.mtext;
-    // size_t line_size = sizeof(msg.mtext);
 
     // msg.mtext[0] = '\0';
 
