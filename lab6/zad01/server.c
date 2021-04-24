@@ -49,6 +49,14 @@ void init_msg(msgbuf *msg)
     msg->mtext[1] = '\0';
 
     send_msg_to(msg, data.q);
+    print_lists();
+}
+
+void stop_client_msg(msgbuf *msg)
+{
+    char id = msg->mtext[0];
+    remove_client(id);
+    print_lists();
 }
 
 void interpret_msg(msgbuf *msg)
@@ -58,7 +66,8 @@ void interpret_msg(msgbuf *msg)
     case L_INIT:
         init_msg(msg);
         break;
-
+    case L_STOP:
+        stop_client_msg(msg);
     default:
         break;
     }
@@ -69,9 +78,8 @@ void sigc(int);
 
 int main(int argc, char const *argv[])
 {
+    server_queue = create_queue("./id");
     apply_destructor(destructor, sigc);
-
-    server_queue = open_queue("./id");
 
     while (wait_for_msg_from(&msg, server_queue) != -1)
     {
@@ -154,6 +162,22 @@ L_QUEUE remove_client(char id)
     return queue;
 }
 
+void stop_all_clients()
+{
+    msg.mtype = L_STOP;
+    msg.mtext[0] = '\0';
+    while (n_avaible)
+    {
+        L_QUEUE q = remove_client(avaible_clients[0].id);
+        send_msg_to(&msg, q);
+    }
+    while (n_not_avaible)
+    {
+        L_QUEUE q = remove_client(not_avaible_clients[0].id);
+        send_msg_to(&msg, q);
+    }
+}
+
 char add_client(L_QUEUE queue)
 {
     char id = next_id++;
@@ -167,20 +191,29 @@ char add_client(L_QUEUE queue)
 void print_lists()
 {
     printf("[");
-    for (size_t i = 0; i < n_avaible; i++)
+    if (n_avaible)
     {
-        printf("%d ", avaible_clients[i].id);
+        for (size_t i = 0; i < n_avaible - 1; i++)
+        {
+            printf("%d ", avaible_clients[i].id);
+        }
+        printf("%d", avaible_clients[n_avaible - 1].id);
     }
     printf("]\n[");
-    for (size_t i = 0; i < n_not_avaible; i++)
+    if (n_not_avaible)
     {
-        printf("%d ", not_avaible_clients[i].id);
+        for (size_t i = 0; i < n_not_avaible - 1; i++)
+        {
+            printf("%d ", not_avaible_clients[i].id);
+        }
+        printf("%d", not_avaible_clients[n_not_avaible - 1].id);
     }
-    printf("]\n\n");
+    printf("]\n");
 }
 
 void destructor(void)
 {
+    stop_all_clients();
     close_queue(server_queue);
     printf("Server down\n");
 }
@@ -188,5 +221,5 @@ void destructor(void)
 void sigc(int sig_no)
 {
     printf("Ctrl + C\n");
-    destructor();
+    exit(0);
 }

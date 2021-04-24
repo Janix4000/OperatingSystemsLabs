@@ -21,7 +21,7 @@ void close_queue(L_QUEUE queue);
 void apply_destructor(void (*destructor)(void), void (*sigc)(int));
 
 L_QUEUE open_queue(const char *path);
-L_QUEUE force_open_queue(const char *path);
+L_QUEUE create_queue(const char *path);
 
 int send_msg_to(msgbuf *msg, L_QUEUE queue);
 
