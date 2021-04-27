@@ -10,7 +10,7 @@ ips: $(LIB)/ips.c
 	$(CC) $(CFLAGS) -$(OPT) -c $(LIB)/ips.c
 
 server: ips server.c
-	$(CC) $(CFLAGS) -$(OPT) -static server.c ips.o -o server.out
+	$(CC) $(CFLAGS) -$(OPT) -static -L./lib server.c ips.o -lvector -o server.out
 
 sender: ips sender.c
 	$(CC) $(CFLAGS) -$(OPT) -static sender.c ips.o -o sender.out

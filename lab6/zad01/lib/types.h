@@ -11,6 +11,12 @@
 
 #include <errno.h>
 
+#ifdef L_SYS_V
+#define L_QUEUE int
+#else
+#define L_QUEUE int
+#endif
+
 #define L_COUNT 8
 #define L_FAIL 7
 #define L_MSG 6

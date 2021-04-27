@@ -6,6 +6,7 @@
         "vector": "c",
         "stdlib.h": "c",
         "typeinfo": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "stdio.h": "c"
     }
 }

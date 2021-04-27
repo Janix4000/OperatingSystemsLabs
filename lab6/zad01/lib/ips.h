@@ -4,11 +4,7 @@
 #define L_SYS_V
 // #define L_POSIX
 
-#ifdef L_SYS_V
-#define L_QUEUE int
-#else
-#define L_QUEUE int
-#endif
+#include "types.h"
 
 typedef struct msgbuf
 {
