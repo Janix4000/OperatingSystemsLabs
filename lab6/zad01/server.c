@@ -75,14 +75,19 @@ void connect_msg(msgbuf *msg)
     char id = msg->mtext[0];
     char other_id = msg->mtext[1];
     L_QUEUE q = get_queue(id);
-    L_QUEUE other_q = get_queue(other_id);
-
+    if (id == other_id)
+    {
+        msg->mtype = L_FAIL;
+        send_msg_to(msg, q);
+        return;
+    }
     if (!is_avaible(id) || !is_avaible(other_id))
     {
         msg->mtype = L_FAIL;
         send_msg_to(msg, q);
         return;
     }
+    L_QUEUE other_q = get_queue(other_id);
 
     connect_clients(id, other_id);
 

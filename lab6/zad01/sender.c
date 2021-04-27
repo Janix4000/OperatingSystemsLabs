@@ -30,7 +30,7 @@ void destructor(void);
 void sigc(int sig_no);
 
 void ask_server_for_init();
-void ask_server_for_connect(int other_id);
+void ask_server_for_connect(char other_id);
 void wait_for_connect();
 void ask_server_for_disconnect();
 void ask_server_for_stop();
@@ -74,7 +74,10 @@ void interpret_msg(msgbuf *msg)
     break;
     case L_DISCONNECT:
     {
+
+        printf("Rozlaczono sie.\n");
         msg_queue = -1;
+        msg_id = -1;
     }
     break;
     case L_MSG:
@@ -142,9 +145,13 @@ void execute_command(char *cin)
     }
     else if (strcmp(comm, "connect") == 0)
     {
-        if (id == -1)
+        if (id < 0 || id > 254)
         {
             printf("Bad id given\n");
+        }
+        else if (msg_id != -1)
+        {
+            printf("Disconnect first.\n");
         }
         else
         {
@@ -160,13 +167,15 @@ void execute_command(char *cin)
         else
         {
             ask_server_for_disconnect();
+            msg_id = -1;
+            msg_queue = -1;
         }
     }
     else if (strcmp(comm, "exit") == 0)
     {
         exit(0);
     }
-    else
+    else if (msg_queue == -1)
     {
         printf("Uknown command: %s\n", comm);
     }
@@ -193,6 +202,7 @@ void main_loop()
         {
             if (fgets(cin, sizeof(cin), stdin) != NULL)
             {
+                execute_command(cin);
                 if (msg_id != -1)
                 {
                     char *endl = strchr(cin, '\n');
@@ -203,10 +213,6 @@ void main_loop()
                     strcpy(msg.mtext, cin);
                     msg.mtype = L_MSG;
                     send_msg_to(&msg, msg_queue);
-                }
-                else
-                {
-                    execute_command(cin);
                 }
             }
         }
@@ -226,7 +232,7 @@ void ask_server_for_init()
     interpret_msg(&msg);
 }
 
-void ask_server_for_connect(int other_id)
+void ask_server_for_connect(char other_id)
 {
     msg.mtype = L_CONNECT;
     msg.mtext[0] = id;
