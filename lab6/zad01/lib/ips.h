@@ -22,3 +22,4 @@ L_QUEUE create_queue(const char *path);
 int send_msg_to(msgbuf *msg, L_QUEUE queue);
 
 int wait_for_msg_from(msgbuf *msg, L_QUEUE queue);
+int get_msg_from(msgbuf *msg, L_QUEUE queue);

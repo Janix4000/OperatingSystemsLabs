@@ -3,12 +3,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/time.h>
+#include <fcntl.h>
 #include <fcntl.h>
 
 #include <errno.h>
@@ -51,24 +53,14 @@ void interpret_msg(msgbuf *msg)
     case L_LIST:
     {
         char *list = msg->mtext;
-        char chosen_id = -1;
+        printf("List:\n");
         for (char *it = list; *it; ++it)
         {
             if (*it == id)
             {
                 continue;
             }
-            chosen_id = *it;
-            printf("I will connect to this dude: %d\n", *it);
-            break;
-        }
-        if (chosen_id == -1)
-        {
-            printf("No hot mommies in neighbourhood ;'\\\n");
-        }
-        else
-        {
-            ask_server_for_connect(chosen_id);
+            printf("%d\n", *it);
         }
     }
     // list_msg(msg);
@@ -87,11 +79,7 @@ void interpret_msg(msgbuf *msg)
     break;
     case L_MSG:
     {
-        printf("Received: \"%s\"\n", msg->mtext);
-        msg->mtype = L_MSG;
-        strcpy(msg->mtext, "Co tam?");
-        send_msg_to(msg, msg_queue);
-        sleep(3);
+        printf("[%d]: \"%s\"\n", msg_id, msg->mtext);
     }
     break;
     default:
@@ -99,15 +87,21 @@ void interpret_msg(msgbuf *msg)
     }
 }
 
-int main(int argc, char const *argv[])
+void init(int argc, char const *argv[])
 {
     if (argc != 1 + 1)
     {
         perror("No args");
         exit(-1);
     }
+
+    FILE *handle = popen("tail -f /als/als_test.txt", "r");
+    int fd = fileno(handle);
+    int flags = fcntl(fd, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    fcntl(fd, F_SETFL, flags);
+
     own_queue = create_queue(argv[1]);
-    printf("My queue: %d\n", own_queue);
     apply_destructor(destructor, sigc);
 
     while ((server_queue = open_queue("./id")) == -1)
@@ -117,42 +111,113 @@ int main(int argc, char const *argv[])
     }
 
     ask_server_for_init();
+}
 
-    bool keep_chating = true;
+void main_loop();
 
-    while (keep_chating)
+int main(int argc, char const *argv[])
+{
+    init(argc, argv);
+
+    main_loop();
+
+    return 0;
+}
+
+// LIST
+// CONNECT ID
+// DISCONNECT
+// EXIT
+
+void execute_command(char *cin)
+{
+    char comm[60];
+    int id = -1;
+    bool succes = sscanf(cin, "%s %d", comm, &id);
+    for (char *p = comm; *p; ++p)
+        *p = tolower(*p);
+    if (strcmp(comm, "list") == 0)
     {
         ask_server_for_list();
-
-        if (msg_queue == -1)
+    }
+    else if (strcmp(comm, "connect") == 0)
+    {
+        if (id == -1)
         {
-            wait_for_connect();
+            printf("Bad id given\n");
         }
-        msg.mtype = L_MSG;
-        strcpy(msg.mtext, "Siema!");
-        send_msg_to(&msg, msg_queue);
+        else
+        {
+            ask_server_for_connect(id);
+        }
+    }
+    else if (strcmp(comm, "disconnect") == 0)
+    {
+        if (msg_id == -1)
+        {
+            printf("Already not connected\n");
+        }
+        else
+        {
+            ask_server_for_disconnect();
+        }
+    }
+    else if (strcmp(comm, "exit") == 0)
+    {
+        exit(0);
+    }
+    else
+    {
+        printf("Uknown command: %s\n", comm);
+    }
+}
 
-        while (wait_for_msg_from(&msg, own_queue) != -1 && msg_queue != -1)
+void main_loop()
+{
+    char cin[64];
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    fd_set read_set;
+    FD_ZERO(&read_set);
+    while (true)
+    {
+        if (get_msg_from(&msg, own_queue) >= 0)
         {
             interpret_msg(&msg);
         }
-        printf("Obcy opuscil chat...\n");
-    }
 
-    return 0;
+        FD_SET(STDIN_FILENO, &read_set); // dodajemy STDIN_FILENO
+        select(STDIN_FILENO + 1, &read_set, NULL, NULL, &timeout);
+        if (FD_ISSET(STDIN_FILENO, &read_set))
+        {
+            if (fgets(cin, sizeof(cin), stdin) != NULL)
+            {
+                if (msg_id != -1)
+                {
+                    char *endl = strchr(cin, '\n');
+                    if (endl)
+                    {
+                        *endl = '\0';
+                    }
+                    strcpy(msg.mtext, cin);
+                    msg.mtype = L_MSG;
+                    send_msg_to(&msg, msg_queue);
+                }
+                else
+                {
+                    execute_command(cin);
+                }
+            }
+        }
+    }
 }
 
 void ask_server_for_init()
 {
     msg.mtype = L_INIT;
-    union
-    {
-        int q;
-        char tag[sizeof(int)];
-    } data;
-    data.q = own_queue;
 
-    strncpy(msg.mtext, data.tag, sizeof(int));
+    strncpy(msg.mtext, (char *)&own_queue, sizeof(int));
     msg.mtype = L_INIT;
 
     send_msg_to(&msg, server_queue);
@@ -167,7 +232,6 @@ void ask_server_for_connect(int other_id)
     msg.mtext[0] = id;
     msg.mtext[1] = other_id;
     send_msg_to(&msg, server_queue);
-    wait_for_connect();
 }
 void wait_for_connect()
 {
@@ -194,9 +258,6 @@ void ask_server_for_list()
     msg.mtype = L_LIST;
     msg.mtext[0] = id;
     send_msg_to(&msg, server_queue);
-
-    wait_for_msg_from(&msg, own_queue);
-    interpret_msg(&msg);
 }
 
 void server_down()

@@ -61,3 +61,8 @@ int wait_for_msg_from(msgbuf *msg, L_QUEUE queue)
     }
     return res;
 }
+
+int get_msg_from(msgbuf *msg, L_QUEUE queue)
+{
+    return msgrcv(queue, msg, sizeof(msg->mtext), -L_COUNT, IPC_NOWAIT);
+}
