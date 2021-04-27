@@ -78,12 +78,14 @@ void connect_msg(msgbuf *msg)
     if (id == other_id)
     {
         msg->mtype = L_FAIL;
+        strcpy(msg->mtext, "Same ID");
         send_msg_to(msg, q);
         return;
     }
     if (!is_avaible(id) || !is_avaible(other_id))
     {
         msg->mtype = L_FAIL;
+        strcpy(msg->mtext, "Not avaible ID");
         send_msg_to(msg, q);
         return;
     }

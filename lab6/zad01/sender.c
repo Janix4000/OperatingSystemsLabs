@@ -53,14 +53,30 @@ void interpret_msg(msgbuf *msg)
     case L_LIST:
     {
         char *list = msg->mtext;
-        printf("List:\n");
+        int n = 0;
         for (char *it = list; *it; ++it)
         {
             if (*it == id)
             {
                 continue;
             }
-            printf("%d\n", *it);
+            n++;
+        }
+        if (n == 0)
+        {
+            printf("No avaible clients.\n");
+        }
+        else
+        {
+            printf("List:\n");
+            for (char *it = list; *it; ++it)
+            {
+                if (*it == id)
+                {
+                    continue;
+                }
+                printf("%d\n", *it);
+            }
         }
     }
     // list_msg(msg);
@@ -83,6 +99,11 @@ void interpret_msg(msgbuf *msg)
     case L_MSG:
     {
         printf("[%d]: \"%s\"\n", msg_id, msg->mtext);
+    }
+    break;
+    case L_FAIL:
+    {
+        printf("SERVER_FAIL: \"%s\"\n", msg->mtext);
     }
     break;
     default:
@@ -132,11 +153,11 @@ int main(int argc, char const *argv[])
 // DISCONNECT
 // EXIT
 
-void execute_command(char *cin)
+bool execute_command(char *cin)
 {
     char comm[60];
     int id = -1;
-    bool succes = sscanf(cin, "%s %d", comm, &id);
+    sscanf(cin, "%s %d", comm, &id);
     for (char *p = comm; *p; ++p)
         *p = tolower(*p);
     if (strcmp(comm, "list") == 0)
@@ -175,10 +196,15 @@ void execute_command(char *cin)
     {
         exit(0);
     }
-    else if (msg_queue == -1)
+    else
     {
-        printf("Uknown command: %s\n", comm);
+        if (msg_queue == -1)
+        {
+            printf("Uknown command: %s\n", comm);
+        }
+        return 0;
     }
+    return 1;
 }
 
 void main_loop()
@@ -202,8 +228,8 @@ void main_loop()
         {
             if (fgets(cin, sizeof(cin), stdin) != NULL)
             {
-                execute_command(cin);
-                if (msg_id != -1)
+                bool executed = execute_command(cin);
+                if (!executed && msg_id != -1)
                 {
                     char *endl = strchr(cin, '\n');
                     if (endl)
