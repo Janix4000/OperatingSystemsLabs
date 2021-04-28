@@ -30,6 +30,7 @@ void disconnect_one_from_pair(char id);
 void connect_clients(char id, char other_id);
 void remove_pair(char id);
 char get_second_id_from_pair(int id);
+bool is_present(char id);
 
 void init_msg(msgbuf *msg)
 {
@@ -50,6 +51,11 @@ void init_msg(msgbuf *msg)
 void stop_client_msg(msgbuf *msg)
 {
     char id = msg->mtext[0];
+    if (!is_present(id))
+    {
+        fprintf(stderr, "No such client to stop\n");
+        return;
+    }
     if (!is_avaible(id))
     {
         char other_id = get_second_id_from_pair(id);
@@ -148,14 +154,16 @@ int main(int argc, char const *argv[])
     vecInit(&avaible, 256);
     vecInit(&connected, 256);
 
-    server_queue = create_queue("./id");
+    server_queue = create_queue(SERVER_QUEUE_PATH);
     printf("My queue: %d\n", server_queue);
     apply_destructor(destructor, sigc);
-
-    while (wait_for_msg_from(&msg, server_queue) != -1)
+    while (true)
     {
-        interpret_msg(&msg);
-        print_lists();
+        if (get_msg_from(&msg, server_queue) != -1)
+        {
+            interpret_msg(&msg);
+            print_lists();
+        }
     }
 
     perror("msgrcv");
@@ -183,6 +191,11 @@ L_QUEUE get_queue(char id)
         it = find_client_in(&connected, id);
     }
     return it->queue;
+}
+
+bool is_present(char id)
+{
+    return find_client_in(&avaible, id) != NULL || find_client_in(&connected, id) != NULL;
 }
 
 bool is_avaible(char id)
@@ -338,6 +351,13 @@ void destructor(void)
     vecFree(&avaible);
     vecFree(&connected);
     close_queue(server_queue);
+#ifdef L_POSIX
+    while (mq_unlink(SERVER_QUEUE_PATH) == -1)
+    {
+        printf("Tried closing...\n");
+    }
+
+#endif // POSIX
     printf("Server down\n");
 }
 

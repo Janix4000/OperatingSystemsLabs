@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -8,13 +10,20 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <fcntl.h>
+#include <mqueue.h>
+#include <sys/stat.h>
 
 #include <errno.h>
 
+// #define L_SYS_V
+#define L_POSIX
+
 #ifdef L_SYS_V
 #define L_QUEUE int
+#define SERVER_QUEUE_PATH "/home/janix/"
 #else
-#define L_QUEUE int
+#define L_QUEUE mqd_t
+#define SERVER_QUEUE_PATH "/home"
 #endif
 
 #define L_COUNT 8

@@ -7,13 +7,13 @@ LIB = ./lib
 all: clean server sender
 
 ips: $(LIB)/ips.c
-	$(CC) $(CFLAGS) -$(OPT) -c $(LIB)/ips.c
+	$(CC) $(CFLAGS) -$(OPT) -c $(LIB)/ips.c -lrt
 
 server: ips server.c
-	$(CC) $(CFLAGS) -$(OPT) -static -L./lib server.c ips.o -lvector -o server.out
+	$(CC) $(CFLAGS) -$(OPT) -static -L./lib server.c ips.o -lvector -o server.out -lrt
 
 sender: ips sender.c
-	$(CC) $(CFLAGS) -$(OPT) -static sender.c ips.o -o sender.out
+	$(CC) $(CFLAGS) -$(OPT) -static sender.c ips.o -o sender.out -lrt
 
 clean:
 	$(RM) -f *.o *.a *.so *.out

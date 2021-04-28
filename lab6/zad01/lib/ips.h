@@ -1,11 +1,6 @@
 #pragma once
 #include "types.h"
 
-#define L_SYS_V
-// #define L_POSIX
-
-#include "types.h"
-
 typedef struct msgbuf
 {
     long mtype;

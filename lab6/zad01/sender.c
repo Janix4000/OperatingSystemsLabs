@@ -23,6 +23,7 @@ int msg_queue = -1;
 msgbuf msg;
 char id = -1;
 char msg_id = -1;
+char own_name[128];
 
 void ask_server_for_list();
 
@@ -118,17 +119,12 @@ void init(int argc, char const *argv[])
         perror("No args");
         exit(-1);
     }
-
-    FILE *handle = popen("tail -f /als/als_test.txt", "r");
-    int fd = fileno(handle);
-    int flags = fcntl(fd, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    fcntl(fd, F_SETFL, flags);
-
-    own_queue = create_queue(argv[1]);
+    strcpy(own_name, argv[1]);
+    own_queue = create_queue(own_name);
     apply_destructor(destructor, sigc);
+    printf("Mu queue %d\n", own_queue);
 
-    while ((server_queue = open_queue("./id")) == -1)
+    while ((server_queue = open_queue(SERVER_QUEUE_PATH)) == -1)
     {
         fprintf(stderr, "Waiting for server..\n");
         sleep(1);
@@ -253,9 +249,6 @@ void ask_server_for_init()
     msg.mtype = L_INIT;
 
     send_msg_to(&msg, server_queue);
-
-    wait_for_msg_from(&msg, own_queue);
-    interpret_msg(&msg);
 }
 
 void ask_server_for_connect(char other_id)
@@ -264,12 +257,6 @@ void ask_server_for_connect(char other_id)
     msg.mtext[0] = id;
     msg.mtext[1] = other_id;
     send_msg_to(&msg, server_queue);
-}
-void wait_for_connect()
-{
-    printf("Czekanie na nowego rozmowce...\n");
-    wait_for_msg_from(&msg, own_queue);
-    interpret_msg(&msg);
 }
 
 void ask_server_for_disconnect()
@@ -306,6 +293,9 @@ void destructor(void)
         ask_server_for_stop();
     }
     close_queue(own_queue);
+#ifdef L_POSIX
+    mq_unlink(own_name);
+#endif // POSIX
     printf("Client down\n");
 }
 
