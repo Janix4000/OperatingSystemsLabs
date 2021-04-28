@@ -41,3 +41,5 @@ lab4/zad03/a/raport.txt
 lab.tar
 *.json
 lab5/.vscode/launch.json
+lab6/chat
+lab6/chat/*
