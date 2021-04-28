@@ -35,6 +35,7 @@
 #define L_DISCONNECT 2
 #define L_STOP 1
 
-#define L_MAXSIZE 80
+#define L_MAX_CLIENTS 255
+#define L_MAX_MSG_SIZE 255
 
 #define L_PROJ 'a'

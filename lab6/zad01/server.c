@@ -18,7 +18,7 @@ int next_id = 1;
 LibVector avaible;
 LibVector connected;
 
-char add_client_to_lists(L_QUEUE queue);
+char add_client_to_lists(pid_t pid, L_QUEUE queue);
 L_QUEUE remove_client_from_lists(char id);
 L_QUEUE make_client_avaible(char id);
 L_QUEUE make_client_connected(char id);
@@ -31,26 +31,27 @@ void connect_clients(char id, char other_id);
 void remove_pair(char id);
 char get_second_id_from_pair(int id);
 bool is_present(char id);
+client *find_client_in(LibVector *clients, char id);
 
 void init_msg(msgbuf *msg)
 {
-    L_QUEUE q;
-    strncpy((char *)&q, msg->mtext, sizeof(int));
+    pid_t pid = msg->conn.pid;
+    L_QUEUE q = open_queue(pid);
 
-    char id = add_client_to_lists(q);
+    char id = add_client_to_lists(pid, q);
 
     printf("Client init received, given id: %d\n", id);
 
+    msg->sender = 0;
     msg->mtype = L_INIT;
-    msg->mtext[0] = id;
-    msg->mtext[1] = '\0';
+    msg->conn.id = id;
 
     send_msg_to(msg, q);
 }
 
 void stop_client_msg(msgbuf *msg)
 {
-    char id = msg->mtext[0];
+    char id = msg->sender;
     if (!is_present(id))
     {
         fprintf(stderr, "No such client to stop\n");
@@ -61,58 +62,62 @@ void stop_client_msg(msgbuf *msg)
         char other_id = get_second_id_from_pair(id);
         disconnect_one_from_pair(other_id);
     }
+    close_queue(get_queue(id));
     remove_client_from_lists(id);
 }
 void list_msg(msgbuf *msg)
 {
-    char id = msg->mtext[0];
+    char id = msg->sender;
     L_QUEUE q = get_queue(id);
     msg->mtype = L_LIST;
     for (size_t i = 0; i < avaible.size; i++)
     {
-        msg->mtext[i] = avaible.container[i].id;
+        msg->list[i] = avaible.container[i].id;
     }
-    msg->mtext[avaible.size] = '\0';
+    msg->list[avaible.size] = '\0';
 
     send_msg_to(msg, q);
 }
 void connect_msg(msgbuf *msg)
 {
-    char id = msg->mtext[0];
-    char other_id = msg->mtext[1];
+    char id = msg->sender;
+    char other_id = msg->conn.id;
+
+    client *sender = find_client_in(&avaible, id);
+    client *other = find_client_in(&avaible, other_id);
     L_QUEUE q = get_queue(id);
     if (id == other_id)
     {
         msg->mtype = L_FAIL;
-        strcpy(msg->mtext, "Same ID");
+        strcpy(msg->msg, "Same ID");
         send_msg_to(msg, q);
         return;
     }
-    if (!is_avaible(id) || !is_avaible(other_id))
+    if (!sender || !other)
     {
         msg->mtype = L_FAIL;
-        strcpy(msg->mtext, "Not avaible ID");
+        strcpy(msg->msg, "Not avaible ID");
         send_msg_to(msg, q);
         return;
     }
-    L_QUEUE other_q = get_queue(other_id);
+
+    msg->mtype = L_CONNECT;
+    msg->sender = 0;
+
+    msg->conn.pid = other->pid;
+    msg->conn.id = other->id;
+    send_msg_to(msg, sender->queue);
+
+    msg->conn.pid = sender->pid;
+    msg->conn.id = sender->id;
+    send_msg_to(msg, other->queue);
 
     connect_clients(id, other_id);
-
-    msg->mtype = L_CONNECT;
-    strncpy(msg->mtext, (char *)&other_q, sizeof(int));
-    msg->mtext[sizeof(int)] = other_id;
-    send_msg_to(msg, q);
-
-    msg->mtype = L_CONNECT;
-    strncpy(msg->mtext, (char *)&q, sizeof(int));
-    msg->mtext[sizeof(int)] = id;
-    send_msg_to(msg, other_q);
 }
 
 void disconnect_msg(msgbuf *msg)
 {
-    char id = msg->mtext[0];
+    char id = msg->sender;
     if (is_avaible(id))
     {
         fprintf(stderr, "Client is already avaible\n");
@@ -154,7 +159,7 @@ int main(int argc, char const *argv[])
     vecInit(&avaible, 256);
     vecInit(&connected, 256);
 
-    server_queue = create_queue(SERVER_QUEUE_PATH);
+    server_queue = create_queue(0);
     printf("My queue: %d\n", server_queue);
     apply_destructor(destructor, sigc);
     while (true)
@@ -296,28 +301,30 @@ L_QUEUE remove_client_from_lists(char id)
 
 void stop_all_clients()
 {
-    msg.mtext[0] = '\0';
+    msg.sender = 0;
+    msg.mtype = L_STOP;
     while (avaible.size)
     {
-        msg.mtype = L_STOP;
         L_QUEUE q = remove_client_from_lists(avaible.container[0].id);
         send_msg_to(&msg, q);
+        close_queue(q);
     }
     while (connected.size)
     {
-        msg.mtype = L_STOP;
         L_QUEUE q = remove_client_from_lists(connected.container[0].id);
         send_msg_to(&msg, q);
+        close_queue(q);
     }
 }
 
-char add_client_to_lists(L_QUEUE queue)
+char add_client_to_lists(pid_t pid, L_QUEUE queue)
 {
     char id = next_id++;
     client c;
     c.id = id;
     c.queue = queue;
     c.conn_id = -1;
+    c.pid = pid;
     vecPushBack(&avaible, c);
     return id;
 }
@@ -350,19 +357,12 @@ void destructor(void)
     stop_all_clients();
     vecFree(&avaible);
     vecFree(&connected);
-    close_queue(server_queue);
-#ifdef L_POSIX
-    while (mq_unlink(SERVER_QUEUE_PATH) == -1)
-    {
-        printf("Tried closing...\n");
-    }
-
-#endif // POSIX
+    remove_queue(server_queue, 0);
     printf("Server down\n");
 }
 
 void sigc(int sig_no)
 {
-    printf("Ctrl + C\n");
+    printf("trl + C\n");
     exit(0);
 }

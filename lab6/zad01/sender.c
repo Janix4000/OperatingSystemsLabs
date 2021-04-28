@@ -21,9 +21,8 @@ int server_queue = -1;
 int own_queue = -1;
 int msg_queue = -1;
 msgbuf msg;
-char id = -1;
+char own_id = -1;
 char msg_id = -1;
-char own_name[128];
 
 void ask_server_for_list();
 
@@ -44,8 +43,8 @@ void interpret_msg(msgbuf *msg)
     {
     case L_INIT:
     {
-        id = msg->mtext[0];
-        printf("My new id: %d\n", id);
+        own_id = msg->conn.id;
+        printf("My new id: %d\n", own_id);
     }
     break;
     case L_STOP:
@@ -53,11 +52,11 @@ void interpret_msg(msgbuf *msg)
         break;
     case L_LIST:
     {
-        char *list = msg->mtext;
+        char *list = msg->list;
         int n = 0;
         for (char *it = list; *it; ++it)
         {
-            if (*it == id)
+            if (*it == own_id)
             {
                 continue;
             }
@@ -72,7 +71,7 @@ void interpret_msg(msgbuf *msg)
             printf("List:\n");
             for (char *it = list; *it; ++it)
             {
-                if (*it == id)
+                if (*it == own_id)
                 {
                     continue;
                 }
@@ -84,27 +83,27 @@ void interpret_msg(msgbuf *msg)
     break;
     case L_CONNECT:
     {
-        strncpy((char *)&msg_queue, msg->mtext, sizeof(int));
-        msg_id = msg->mtext[sizeof(int)];
+        pid_t msg_pid = msg->conn.pid;
+        msg_id = msg->conn.id;
+        msg_queue = open_queue(msg_pid);
         printf("Polaczono z %d\n", msg_id);
     }
     break;
     case L_DISCONNECT:
     {
-
-        printf("Rozlaczono sie.\n");
+        printf("Rozlaczono sie z [%d].\n", msg_id);
         msg_queue = -1;
         msg_id = -1;
     }
     break;
     case L_MSG:
     {
-        printf("[%d]: \"%s\"\n", msg_id, msg->mtext);
+        printf("[%d]: \"%s\"\n", msg_id, msg->msg);
     }
     break;
     case L_FAIL:
     {
-        printf("SERVER_FAIL: \"%s\"\n", msg->mtext);
+        printf("SERVER_FAIL: \"%s\"\n", msg->msg);
     }
     break;
     default:
@@ -112,19 +111,13 @@ void interpret_msg(msgbuf *msg)
     }
 }
 
-void init(int argc, char const *argv[])
+void init()
 {
-    if (argc != 1 + 1)
-    {
-        perror("No args");
-        exit(-1);
-    }
-    strcpy(own_name, argv[1]);
-    own_queue = create_queue(own_name);
+    own_queue = create_queue(getpid());
     apply_destructor(destructor, sigc);
-    printf("Mu queue %d\n", own_queue);
+    printf("My queue %d\n", own_queue);
 
-    while ((server_queue = open_queue(SERVER_QUEUE_PATH)) == -1)
+    while ((server_queue = open_queue(0)) == -1)
     {
         fprintf(stderr, "Waiting for server..\n");
         sleep(1);
@@ -137,7 +130,7 @@ void main_loop();
 
 int main(int argc, char const *argv[])
 {
-    init(argc, argv);
+    init();
 
     main_loop();
 
@@ -184,8 +177,6 @@ bool execute_command(char *cin)
         else
         {
             ask_server_for_disconnect();
-            msg_id = -1;
-            msg_queue = -1;
         }
     }
     else if (strcmp(comm, "exit") == 0)
@@ -232,8 +223,9 @@ void main_loop()
                     {
                         *endl = '\0';
                     }
-                    strcpy(msg.mtext, cin);
+                    strcpy(msg.msg, cin);
                     msg.mtype = L_MSG;
+                    msg.sender = own_id;
                     send_msg_to(&msg, msg_queue);
                 }
             }
@@ -243,10 +235,9 @@ void main_loop()
 
 void ask_server_for_init()
 {
+    msg.sender = own_id;
     msg.mtype = L_INIT;
-
-    strncpy(msg.mtext, (char *)&own_queue, sizeof(int));
-    msg.mtype = L_INIT;
+    msg.conn.pid = getpid();
 
     send_msg_to(&msg, server_queue);
 }
@@ -254,28 +245,28 @@ void ask_server_for_init()
 void ask_server_for_connect(char other_id)
 {
     msg.mtype = L_CONNECT;
-    msg.mtext[0] = id;
-    msg.mtext[1] = other_id;
+    msg.sender = own_id;
+    msg.conn.id = other_id;
     send_msg_to(&msg, server_queue);
 }
 
 void ask_server_for_disconnect()
 {
     msg.mtype = L_DISCONNECT;
-    msg.mtext[0] = id;
+    msg.sender = own_id;
     send_msg_to(&msg, server_queue);
 }
 void ask_server_for_stop()
 {
     msg.mtype = L_STOP;
-    msg.mtext[0] = id;
+    msg.sender = own_id;
     send_msg_to(&msg, server_queue);
 }
 
 void ask_server_for_list()
 {
     msg.mtype = L_LIST;
-    msg.mtext[0] = id;
+    msg.sender = own_id;
     send_msg_to(&msg, server_queue);
 }
 
@@ -292,15 +283,12 @@ void destructor(void)
     {
         ask_server_for_stop();
     }
-    close_queue(own_queue);
-#ifdef L_POSIX
-    mq_unlink(own_name);
-#endif // POSIX
+    remove_queue(own_queue, getpid());
     printf("Client down\n");
 }
 
 void sigc(int sig_no)
 {
-    printf("Ctrl + C\n");
+    printf("trl + C\n");
     exit(0);
 }
