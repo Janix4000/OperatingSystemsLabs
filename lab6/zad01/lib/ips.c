@@ -1,5 +1,7 @@
 #include "ips.h"
 
+#include <unistd.h>
+
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -24,11 +26,14 @@ void apply_destructor(void (*destructor)(void), void (*sigc)(int))
     act.sa_flags = 0;
     sigaction(SIGINT, &act, NULL);
 }
+#if defined(L_SYS_V)
+#define L_QUEUE_DIR "./chat/"
+#endif
 
 void generate_name(pid_t pid, char *buff)
 {
 #if defined(L_SYS_V)
-    const char prefix[] = "./chat_";
+    const char prefix[] = L_QUEUE_DIR;
 #elif defined(L_POSIX)
     const char prefix[] = "/chat_";
 #endif
@@ -56,6 +61,16 @@ void remove_queue(L_QUEUE queue, pid_t pid)
     {
         perror("msgctl");
     }
+    if (access(L_QUEUE_DIR, R_OK | W_OK) == 0)
+    {
+        char path[256];
+        generate_name(pid, path);
+        if (access(path, R_OK | W_OK) != 0)
+        {
+            remove(path);
+        }
+    }
+
 #else
     char path[256];
     generate_name(pid, path);
@@ -71,6 +86,7 @@ L_QUEUE open_queue(pid_t pid)
     char path[256];
     generate_name(pid, path);
 #ifdef L_SYS_V
+
     key_t key = ftok(path, L_PROJ);
     L_QUEUE queue = msgget(key, 0);
     // const char error[] = "msgget";
@@ -91,6 +107,28 @@ L_QUEUE create_queue(pid_t pid)
     char path[256];
     generate_name(pid, path);
 #ifdef L_SYS_V
+    if (access(L_QUEUE_DIR, R_OK | W_OK) != 0)
+    {
+        if (mkdir(L_QUEUE_DIR, 0777) != 0)
+        {
+            perror("mkdir");
+            return -1;
+        }
+    }
+
+    if (access(path, R_OK | W_OK) != 0)
+    {
+        int fd;
+
+        if ((fd = creat(path, 0666)) == -1)
+        {
+            perror("creat");
+            return -1;
+        }
+
+        close(fd);
+    }
+
     key_t key = ftok(path, L_PROJ);
     L_QUEUE queue = msgget(key, IPC_CREAT | 0666);
     const char error[] = "msgget";

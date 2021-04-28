@@ -15,8 +15,8 @@
 
 #include <errno.h>
 
-// #define L_SYS_V
-#define L_POSIX
+#define L_SYS_V
+// #define L_POSIX
 
 #ifdef L_SYS_V
 #define L_QUEUE int
