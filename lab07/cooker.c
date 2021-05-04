@@ -42,7 +42,6 @@ void init()
 
     shared_ptr = open_pizzeria();
     extract_pizzeria(shared_ptr, &oven, &table);
-    init_table(table);
 }
 
 void destructor()

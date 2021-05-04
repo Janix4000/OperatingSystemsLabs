@@ -22,5 +22,8 @@ pizzeria:
 cooker: 
 	$(CC) $(CFLAGS) -$(OPT) -static -L./lib cooker.c -lipc -o cooker.out -lrt -lm
 
+delivery_man: 
+	$(CC) $(CFLAGS) -$(OPT) -static -L./lib delivery_man.c -lipc -o delivery_man.out -lrt -lm
+
 clean:
 	$(RM) -f *.o *.a *.so *.out

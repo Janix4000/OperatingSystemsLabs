@@ -48,7 +48,6 @@ static inline void init_table(Table *table)
     table->beg = 0;
     table->end = 0;
     table->n = 0;
-    int len;
 }
 
 static inline int put_pizza_into_oven(Oven *oven, int val)
