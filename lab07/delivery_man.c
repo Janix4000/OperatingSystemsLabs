@@ -21,6 +21,7 @@ void deliver_pizza();
 int main(int argc, char const *argv[])
 {
     init();
+    apply_destructor(destructor, sigc);
 
     while (true)
     {
@@ -28,7 +29,6 @@ int main(int argc, char const *argv[])
         deliver_pizza();
     }
 
-    apply_destructor(destructor, sigc);
     return 0;
 }
 
@@ -47,11 +47,11 @@ void destructor()
     close_sems(&table_sem);
 
     close_pizzeria(shared_ptr);
+    pt_printf("Delivery man down %d\n", 0);
 }
 
 void sigc(int sig_no)
 {
-    printf("trl + C\n");
     exit(0);
 }
 
@@ -61,7 +61,7 @@ void take_pizza()
 
     decr_sem(table_sem.gate);
     pizza = get_pizza_from_table(table);
-    pt_printf("Pobieram pizze: %d Liczba pizz na stole: %d\n", pizza, table->n);
+    pt_printf("Pobieram pizze jako dostawca: %d Liczba pozostalych pizz na stole: %d\n", pizza, table->n);
     incr_sem(table_sem.gate);
 
     incr_sem(table_sem.prod);

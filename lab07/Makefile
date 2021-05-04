@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g
 OPT = O0
-ARGS ?=
+ARGS ?= 4 4
 LIB = ./lib
 
 all: clean main
@@ -11,12 +11,12 @@ run_main: main
 
 
 run_pizzeria: pizzeria
-	./pizzeria.out
+	./pizzeria.out $(ARGS)
 
 main: 
 	$(CC) $(CFLAGS) -$(OPT) -static -L./lib main.c -lipc -o main.out -lrt -lm
 
-pizzeria: 
+pizzeria: cooker delivery_man
 	$(CC) $(CFLAGS) -$(OPT) -static -L./lib pizzeria.c -lipc -o pizzeria.out -lrt -lm
 
 cooker: 

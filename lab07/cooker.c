@@ -22,6 +22,7 @@ void serve_pizza();
 int main(int argc, char const *argv[])
 {
     init();
+    apply_destructor(destructor, sigc);
 
     while (true)
     {
@@ -29,7 +30,6 @@ int main(int argc, char const *argv[])
         serve_pizza();
     }
 
-    apply_destructor(destructor, sigc);
     return 0;
 }
 
@@ -42,6 +42,12 @@ void init()
 
     shared_ptr = open_pizzeria();
     extract_pizzeria(shared_ptr, &oven, &table);
+
+    if (errno != 0)
+    {
+        perror("failure");
+        exit(-1);
+    }
 }
 
 void destructor()
@@ -50,11 +56,11 @@ void destructor()
     close_sems(&table_sem);
 
     close_pizzeria(shared_ptr);
+    pt_printf("Cooker down %d\n", 0);
 }
 
 void sigc(int sig_no)
 {
-    printf("trl + C\n");
     exit(0);
 }
 
@@ -72,15 +78,15 @@ void make_pizza()
 
     decr_sem(oven_sem.gate);
     int idx = put_pizza_into_oven(oven, pizza);
-    pt_printf("Dodałem pizze: %d. Liczba pizz w piecu: %d\n", pizza, oven->n);
+    pt_printf("Dodałem pizze: %d do pieca. Liczba pizz w piecu: %d\n", pizza, oven->n);
     incr_sem(oven_sem.gate);
 
     sleep(cooking_time);
 
     decr_sem(oven_sem.gate);
 
-    get_pizza_from_oven(oven, idx);
-    pt_printf("Wyjmuję pizze: %d. Liczba pizz w piecu: %d.\n", pizza, oven->n);
+    pizza = get_pizza_from_oven(oven, idx);
+    pt_printf("Wyjmuję pizze: %d z pieca. Liczba pozostalych pizz w piecu: %d.\n", pizza, oven->n);
 
     incr_sem(oven_sem.gate);
 
@@ -92,7 +98,7 @@ void serve_pizza()
     decr_sem(table_sem.prod);
 
     decr_sem(table_sem.gate);
-    pt_printf("Kladę pizze: %d. Liczba pizz na stole: %d.\n", pizza, table->n);
+    pt_printf("Kladę pizze na stole: %d. Liczba pizz na stole przed polozeniem: %d.\n", pizza, table->n);
     put_pizza_on_table(table, pizza);
     incr_sem(table_sem.gate);
 
