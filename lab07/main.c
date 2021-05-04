@@ -1,4 +1,5 @@
 #include "lib/sem.h"
+#include "lib/shm.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,25 +22,36 @@
 int main(int argc, char const *argv[])
 {
     semaphore_t semid = create_sem("main", 1, 0);
-    for (size_t i = 0; i < 10; i++)
+    int shmid = create_shared("main", sizeof(int));
+    int *cnt = open_shared("main", 0);
+
+    *cnt = 0;
+
+    for (size_t i = 0; i < 10000; i++)
     {
         if (fork() == 0)
         {
+            int *cnt_fork = open_shared("main", 0);
             semaphore_t semid_fork = open_sem("main");
+
             decr_sem(semid_fork);
-            printf("Hopity hopity this sem is my property, ~ %ld\n", i);
-            sleep(2);
-            printf("Ok, I'll give it back, ~ %ld\n", i);
+            // printf("Hopity hopity this sem is my property, ~ %ld\n", i);
+            *cnt_fork += 1;
+            // printf("Ok, I'll give it back, ~ %ld\n", i);
             incr_sem(semid_fork);
             close_sem(semid_fork);
+            close_shared(cnt_fork);
             exit(0);
         }
     }
-    int status = 0;
-    while (wait(&status) > 0)
+    while (wait(NULL) > 0)
         ;
+    printf("Result %d\n", *cnt);
     close_sem(semid);
+    close_shared(cnt);
+
     remove_sem("main");
+    remove_shared(shmid, "main");
 
     return 0;
 }

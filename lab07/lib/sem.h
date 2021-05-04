@@ -12,8 +12,6 @@
 #include <sys/ipc.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
-// #include <sys/msg.h>
-// #include <mqueue.h>
 
 #include <fcntl.h>
 #include <errno.h>
