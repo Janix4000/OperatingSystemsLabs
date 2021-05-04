@@ -1,0 +1,6 @@
+*.o
+*.a
+main
+*.txt
+main_*
+*.json

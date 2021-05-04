@@ -1,0 +1,8 @@
+Dynamiczne:
+    Małe różnice w real timie, O0 lepsze czasy w user timie, chociaz O1 w tym aspekcie wygrywalo.
+Shared:
+    Wieksze roznice w czasach wykonania, O0 najszybsze
+Static:
+    O0 podobne do O2, O1 najgorsze.
+
+Najszybszy Static, Shared i Dynamic podbnie.
