@@ -1,3 +1,5 @@
+#include "lib/sem.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,26 +13,33 @@
 #include <sys/time.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
 
 #include <fcntl.h>
 #include <errno.h>
 
-union semun {
-    int              val;    /* Value for SETVAL */
-    struct semid_ds *buf;    /* Buffer for IPC_STAT, IPC_SET */
-    unsigned short  *array;  /* Array for GETALL, SETALL */
-    struct seminfo  *__buf;  /* Buffer for IPC_INFO
-                                (Linux specific) */
-};
-
 int main(int argc, char const *argv[])
 {
-    key_t key = ftok("./id", 'a');
-    int semid = semget(key, 1, IPC_CREAT | 0666);
-    union semun arg;
-    arg.val = 0;
-    semctl(semid, 0, SETVAL, arg);
-    
-    
+    semaphore_t semid = create_sem("main", 1, 0);
+    for (size_t i = 0; i < 10; i++)
+    {
+        if (fork() == 0)
+        {
+            semaphore_t semid_fork = open_sem("main");
+            decr_sem(semid_fork);
+            printf("Hopity hopity this sem is my property, ~ %ld\n", i);
+            sleep(2);
+            printf("Ok, I'll give it back, ~ %ld\n", i);
+            incr_sem(semid_fork);
+            close_sem(semid_fork);
+            exit(0);
+        }
+    }
+    int status = 0;
+    while (wait(&status) > 0)
+        ;
+    close_sem(semid);
+    remove_sem("main");
+
     return 0;
 }
