@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g
 OPT = O0
-ARGS ?= 4 4
+ARGS ?= 20 20
 LIB = ./lib
 
 all: clean main

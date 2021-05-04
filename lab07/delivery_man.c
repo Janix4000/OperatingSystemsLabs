@@ -61,7 +61,7 @@ void take_pizza()
 
     decr_sem(table_sem.gate);
     pizza = get_pizza_from_table(table);
-    pt_printf("Pobieram pizze jako dostawca: %d Liczba pozostalych pizz na stole: %d\n", pizza, table->n);
+    pt_printf("Pobieram pizze [%d] ze stolu. Liczba pozostalych pizz na stole: %d.\n", pizza, table->n);
     incr_sem(table_sem.gate);
 
     incr_sem(table_sem.prod);
@@ -71,7 +71,7 @@ void deliver_pizza()
 {
     int deliver_time = 4 + rand() % 2;
     sleep(deliver_time);
-    pt_printf("Dostarczam pizze: %d\n", pizza);
+    pt_printf("Dostarczam pizze [%d].\n", pizza);
 
     int return_time = 4 + rand() % 2;
     sleep(return_time);
