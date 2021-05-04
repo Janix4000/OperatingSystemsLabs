@@ -19,6 +19,7 @@
 typedef struct
 {
     int pizzas[N_BUFF];
+    int n;
 } Oven;
 
 typedef struct
@@ -26,7 +27,17 @@ typedef struct
     int pizzas[N_BUFF];
     size_t beg;
     size_t end;
+    int n;
 } Table;
+
+static inline void init_oven(Oven *oven)
+{
+    for (size_t i = 0; i < N_BUFF; i++)
+    {
+        oven->pizzas[i] = EMPTY;
+    }
+    oven->n = 0;
+}
 
 static inline void init_table(Table *table)
 {
@@ -36,6 +47,8 @@ static inline void init_table(Table *table)
     }
     table->beg = 0;
     table->end = 0;
+    table->n = 0;
+    int len;
 }
 
 static inline int put_pizza_into_oven(Oven *oven, int val)
@@ -45,6 +58,7 @@ static inline int put_pizza_into_oven(Oven *oven, int val)
         if (oven->pizzas[i] == EMPTY)
         {
             oven->pizzas[i] = val;
+            oven->n++;
             return i;
         }
     }
@@ -55,6 +69,7 @@ static inline int get_pizza_from_oven(Oven *oven, int idx)
 {
     int val = oven->pizzas[idx];
     oven->pizzas[idx] = EMPTY;
+    oven->n--;
     return val;
 }
 
@@ -62,6 +77,7 @@ static inline void put_pizza_on_table(Table *table, int val)
 {
     table->pizzas[table->end] = val;
     table->end++;
+    table->n++;
     if (table->end == N_BUFF)
     {
         table->end = 0;
@@ -73,6 +89,7 @@ static inline int get_pizza_from_table(Table *table)
     int val = table->pizzas[table->beg];
     table->pizzas[table->beg] = EMPTY;
     table->beg++;
+    table->n--;
     if (table->beg == N_BUFF)
     {
         table->beg = 0;
@@ -136,3 +153,51 @@ void remove_pizzeria(int shmidt)
 {
     remove_shared(shmidt, "pizzeria");
 }
+
+void apply_destructor(void (*destructor)(void), void (*sigc)(int))
+{
+    atexit(destructor);
+
+    struct sigaction act;
+    act.sa_handler = sigc;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(SIGINT, &act, NULL);
+}
+
+// http://burtleburtle.net/bob/hash/doobs.html
+unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
+{
+    a -= b;
+    a -= c;
+    a ^= (c >> 13);
+    b -= c;
+    b -= a;
+    b ^= (a << 8);
+    c -= a;
+    c -= b;
+    c ^= (b >> 13);
+    a -= b;
+    a -= c;
+    a ^= (c >> 12);
+    b -= c;
+    b -= a;
+    b ^= (a << 16);
+    c -= a;
+    c -= b;
+    c ^= (b >> 5);
+    a -= b;
+    a -= c;
+    a ^= (c >> 3);
+    b -= c;
+    b -= a;
+    b ^= (a << 10);
+    c -= a;
+    c -= b;
+    c ^= (b >> 15);
+    return c;
+}
+
+#define pt_printf(TEXT, ...)                 \
+    printf("(%d, %ld) ", getpid(), clock()); \
+    printf(TEXT, __VA_ARGS__)

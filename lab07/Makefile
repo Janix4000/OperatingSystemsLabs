@@ -9,6 +9,7 @@ all: clean main
 run_main: main
 	./main.out
 
+
 run_pizzeria: pizzeria
 	./pizzeria.out
 
@@ -17,6 +18,9 @@ main:
 
 pizzeria: 
 	$(CC) $(CFLAGS) -$(OPT) -static -L./lib pizzeria.c -lipc -o pizzeria.out -lrt -lm
+
+cooker: 
+	$(CC) $(CFLAGS) -$(OPT) -static -L./lib cooker.c -lipc -o cooker.out -lrt -lm
 
 clean:
 	$(RM) -f *.o *.a *.so *.out
