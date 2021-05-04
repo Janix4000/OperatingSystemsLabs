@@ -7,6 +7,7 @@
         "stdlib.h": "c",
         "typeinfo": "c",
         "types.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "pizza_rules.h": "c"
     }
 }

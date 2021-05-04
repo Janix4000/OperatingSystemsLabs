@@ -100,7 +100,7 @@ int remove_sem(const char *name)
     semid = semget(key, 0, 0666);
     union semun arg;
     semctl(semid, 1, IPC_RMID, arg);
-    const char error[] = "semctl";
+    const char error[] = "remove_sem semctl";
 #elif defined(L_POSIX)
     const char error[] = "mq_open";
 #endif // L_SYS_V
