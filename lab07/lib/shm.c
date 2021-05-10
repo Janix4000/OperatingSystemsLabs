@@ -36,7 +36,7 @@ void *open_shared(const char *name, int shmflags)
     void *ptr = (void *)-1;
     char path[256];
     generate_name(name, path, L_SHM_PREF);
-
+    int shmid = -1;
 #if defined(L_SYS_V)
     key_t key = ftok(path, L_PROJ);
     int shmid = shmget(key, 0, 0666);
