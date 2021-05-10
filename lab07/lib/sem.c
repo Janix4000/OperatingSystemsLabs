@@ -32,13 +32,8 @@ semaphore_t create_sem(const char *name, int beg_val, int flag)
     semid = semget(key, 1, IPC_CREAT | 0666);
     const char error[] = "semget";
 #elif defined(L_POSIX)
-    struct mq_attr attr;
-    attr.mq_maxmsg = 10;
-    attr.mq_msgsize = sizeof(msgbuf);
-    attr.mq_curmsgs = 0;
-    attr.mq_flags = 0;
-    L_QUEUE queue = mq_open(path, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr);
-    const char error[] = "mq_open";
+    semid = sem_open(name, O_CREAT, beg_val);
+    const char error[] = "sem_open";
 #endif // L_SYS_V
     if (semid == L_FAIL)
     {
@@ -70,7 +65,8 @@ semaphore_t open_sem(const char *name)
     semid = semget(key, 0, 0666);
     const char error[] = "semget";
 #elif defined(L_POSIX)
-    const char error[] = "mq_open";
+    semid = sem_open(name, 0);
+    const char error[] = "sem_open";
 #endif // L_SYS_V
     if (semid == L_FAIL)
     {
@@ -85,42 +81,53 @@ int close_sem(semaphore_t semid)
 #if defined(L_SYS_V)
     return 0;
 #elif defined(L_POSIX)
-    const char error[] = "mq_open";
-    return -1;
+    int res = sem_close(semid);
+    const char error[] = "sem_close";
+    if (res <= 0)
+    {
+        perror(error);
+    }
+    return res;
 #endif
 }
 
 int remove_sem(const char *name)
 {
-    semaphore_t semid = L_FAIL;
+    int res = -1;
     char path[256];
     generate_name(name, path, L_SEM_PREF);
 #if defined(L_SYS_V)
+    semaphore_t semid = L_FAIL;
     key_t key = ftok(path, L_PROJ);
     semid = semget(key, 0, 0666);
     union semun arg;
     semctl(semid, 1, IPC_RMID, arg);
-    const char error[] = "remove_sem semctl";
-#elif defined(L_POSIX)
-    const char error[] = "mq_open";
-#endif // L_SYS_V
     if (semid == L_FAIL)
     {
-        perror(error);
-        return -1;
+        res = -1;
     }
-    return 0;
+    const char error[] = "remove_sem semctl";
+#elif defined(L_POSIX)
+    res = sem_unlink(name);
+    const char error[] = "remove_sem sem_unlink";
+#endif // L_SYS_V
+    if (res == -1)
+    {
+        perror(error);
+    }
+    return res;
 }
 
 int incr_sem(semaphore_t semid)
 {
     int res = -1;
-#ifdef L_SYS_V
+#if defined(L_SYS_V)
     struct sembuf op = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
     res = semop(semid, &op, 1);
     const char error[] = "semop";
-#else
-    const char error[] = "mq_send";
+#elif defined(L_POSIX)
+    res = sem_post(semid);
+    const char error[] = "sem_post";
 #endif
     if (res == -1)
     {
@@ -132,11 +139,12 @@ int incr_sem(semaphore_t semid)
 int decr_sem(semaphore_t semid)
 {
     int res = -1;
-#ifdef L_SYS_V
+#if defined(L_SYS_V)
     struct sembuf op = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
     res = semop(semid, &op, 1);
     const char error[] = "semop";
-#else
+#elif defined(L_POSIX)
+    res = sem_wait(semid);
     const char error[] = "mq_send";
 #endif
     if (res == -1)

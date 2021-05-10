@@ -9,8 +9,8 @@
 #include <errno.h>
 #include <stdio.h>
 
-#define L_SYS_V
-// #define L_POSIX
+// #define L_SYS_V
+#define L_POSIX
 
 #if defined(L_SYS_V)
 #define L_SEM_PREF "./sem/"
