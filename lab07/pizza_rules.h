@@ -1,5 +1,7 @@
 #pragma once
 
+// #define _POSIX_C_SOURCE 199309L
+#include <time.h>
 #include <stdlib.h>
 #define SHM_OVEN "oven"
 #define SHM_TABLE "table"
@@ -197,6 +199,13 @@ unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
     return c;
 }
 
-#define pt_printf(TEXT, ...)                 \
-    printf("(%d, %ld) ", getpid(), clock()); \
+static inline long get_milis()
+{
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    return start.tv_nsec / 1000;
+}
+
+#define pt_printf(TEXT, ...)                     \
+    printf("(%d, %ld) ", getpid(), get_milis()); \
     printf(TEXT, __VA_ARGS__)
