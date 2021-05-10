@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <fcntl.h>    /* For O_* constants */
+#include <sys/stat.h> /* For mode constants */
+#include <semaphore.h>
 
 // void apply_destructor(void (*destructor)(void), void (*sigc)(int))
 // {
@@ -32,7 +35,7 @@ semaphore_t create_sem(const char *name, int beg_val, int flag)
     semid = semget(key, 1, IPC_CREAT | 0666);
     const char error[] = "semget";
 #elif defined(L_POSIX)
-    semid = sem_open(name, O_CREAT, beg_val);
+    semid = sem_open(name, O_CREAT | O_EXCL | 0666, beg_val);
     const char error[] = "sem_open";
 #endif // L_SYS_V
     if (semid == L_FAIL)
@@ -83,7 +86,7 @@ int close_sem(semaphore_t semid)
 #elif defined(L_POSIX)
     int res = sem_close(semid);
     const char error[] = "sem_close";
-    if (res <= 0)
+    if (res == -1)
     {
         perror(error);
     }

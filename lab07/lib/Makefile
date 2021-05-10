@@ -9,9 +9,9 @@ libipc.a: sem_static.o shm_static.o
 	$(AR) $(ARFLAGS) libipc.a sem.o shm.o
 
 sem_static.o: sem.c
-	$(CC) $(CFLAGS) -c sem.c 
+	$(CC) $(CFLAGS) -c sem.c -lrt 
 shm_static.o: shm.c
-	$(CC) $(CFLAGS) -c shm.c 
+	$(CC) $(CFLAGS) -c shm.c -lrt
 
 clean:
 	$(RM) -f *.o *.a *.so

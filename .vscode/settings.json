@@ -8,6 +8,7 @@
         "typeinfo": "c",
         "types.h": "c",
         "stdio.h": "c",
-        "pizza_rules.h": "c"
+        "pizza_rules.h": "c",
+        "sem.h": "c"
     }
 }

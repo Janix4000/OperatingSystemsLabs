@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
 {
     semaphore_t semid = create_sem("main", 1, 0);
     int shmid = create_shared("main", sizeof(int));
-    int *cnt = open_shared("main", 0);
+    int *cnt = open_shared("main", 0, sizeof(int));
 
     *cnt = 0;
 
@@ -31,7 +31,7 @@ int main(int argc, char const *argv[])
     {
         if (fork() == 0)
         {
-            int *cnt_fork = open_shared("main", 0);
+            int *cnt_fork = open_shared("main", 0, sizeof(int));
             semaphore_t semid_fork = open_sem("main");
 
             decr_sem(semid_fork);
@@ -40,7 +40,7 @@ int main(int argc, char const *argv[])
             // printf("Ok, I'll give it back, ~ %ld\n", i);
             incr_sem(semid_fork);
             close_sem(semid_fork);
-            close_shared(cnt_fork);
+            close_shared(cnt_fork, sizeof(int));
             exit(0);
         }
     }
@@ -48,7 +48,7 @@ int main(int argc, char const *argv[])
         ;
     printf("Result %d\n", *cnt);
     close_sem(semid);
-    close_shared(cnt);
+    close_shared(cnt, sizeof(int));
 
     remove_sem("main");
     remove_shared(shmid, "main");

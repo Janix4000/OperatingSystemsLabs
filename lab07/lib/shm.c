@@ -19,7 +19,9 @@ int create_shared(const char *name, size_t size)
     const char error[] = "schmget";
 
 #elif defined(L_POSIX)
-    const char error[] = "not implemented";
+    shmid = shm_open(path, O_CREAT | 0666, S_IRUSR | S_IWUSR);
+
+    const char error[] = "shm_open";
 #endif
 
     if (shmid == -1)
@@ -28,10 +30,20 @@ int create_shared(const char *name, size_t size)
         return -1;
     }
 
+#if defined(L_POSIX)
+    int res = ftruncate(shmid, size);
+    const char error2[] = "ftruncate";
+    if (res == -1)
+    {
+        perror(error2);
+        return -1;
+    }
+#endif
+
     return shmid;
 }
 
-void *open_shared(const char *name, int shmflags)
+void *open_shared(const char *name, int shmflags, size_t size)
 {
     void *ptr = (void *)-1;
     char path[256];
@@ -43,6 +55,8 @@ void *open_shared(const char *name, int shmflags)
     const char error[] = "schmget";
 
 #elif defined(L_POSIX)
+    shmid = shm_open(path, 0666, S_IRUSR | S_IWUSR);
+
     const char error[] = "not implemented";
 #endif
 
@@ -58,7 +72,8 @@ void *open_shared(const char *name, int shmflags)
     const char error2[] = "schmget";
 
 #elif defined(L_POSIX)
-    const char error[] = "not implemented";
+    ptr = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, shmid, 0);
+    const char error2[] = "mmap";
 #endif
 
     if (ptr == (void *)-1)
@@ -69,7 +84,7 @@ void *open_shared(const char *name, int shmflags)
     return ptr;
 }
 
-int close_shared(const void *ptr)
+int close_shared(void *ptr, size_t size)
 {
     int res = -1;
 #if defined(L_SYS_V)
@@ -77,7 +92,8 @@ int close_shared(const void *ptr)
     const char error[] = "shmdt";
 
 #elif defined(L_POSIX)
-    const char error[] = "not implemented";
+    res = munmap(ptr, size);
+    const char error[] = "munmap";
 #endif
     if (res == -1)
     {
@@ -97,7 +113,8 @@ int remove_shared(int shmid, const char *name)
 #elif defined(L_POSIX)
     char path[256];
     generate_name(name, path, L_SHM_PREF);
-    const char error[] = "not implemented";
+    res = shm_unlink(path);
+    const char error[] = "shm_unlink";
 #endif
     if (res == -1)
     {
