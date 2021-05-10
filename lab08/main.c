@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 
 typedef struct
 {
@@ -35,6 +36,7 @@ int save_pgm(const char *filename, const Image *img)
         }
         fprintf(file, "\n");
     }
+    fclose(file);
     return 0;
 }
 
@@ -76,6 +78,7 @@ int load_pgm(const char *filename, Image *img)
         }
         // printf("\n");
     }
+    fclose(file);
     return 0;
 }
 
@@ -85,11 +88,11 @@ typedef struct
     int id;
     const Image *src;
     Image *dest;
-} NumbersArgs;
+} ThreadArgs;
 
 void *negate_numbers(void *args)
 {
-    NumbersArgs *number_args = args;
+    ThreadArgs *number_args = args;
 
     const Image *src = number_args->src;
     Image *dest = number_args->dest;
@@ -106,6 +109,57 @@ void *negate_numbers(void *args)
         }
     }
     return NULL;
+}
+
+void *negate_blocks(void *args)
+{
+    ThreadArgs *number_args = args;
+
+    const Image *src = number_args->src;
+    Image *dest = number_args->dest;
+
+    const int n_threads = number_args->n_threads;
+    const int id = number_args->id;
+    const size_t min_x = id * (src->width / n_threads);
+    const size_t max_x = id < n_threads - 1 ? (id + 1) * (src->width / n_threads) : src->width;
+
+    printf("Thread %d from %ld to %ld\n", id, min_x, max_x);
+
+    for (size_t y = 0; y < src->height; y++)
+    {
+        for (size_t x = min_x; x < max_x; x++)
+        {
+            unsigned char tmp = src->img[x + y * src->height];
+            dest->img[x + y * src->height] = 255 - tmp;
+        }
+    }
+    printf("Thread %d done\n", id);
+    return NULL;
+}
+
+void run_method(int n_threads, Image *src, Image *dest, void *(*method)(void *))
+{
+    pthread_t *threads = calloc(sizeof *threads, n_threads);
+    ThreadArgs *args = calloc(sizeof *threads, n_threads);
+
+    for (size_t i = 0; i < n_threads; i++)
+    {
+        args[i] = (ThreadArgs){.src = src, .dest = dest, .id = i, .n_threads = n_threads};
+        pthread_create(threads + i, NULL, method, &args[i]);
+    }
+    printf("Waiting for join\n");
+    for (size_t i = 0; i < n_threads; i++)
+    {
+        int res = pthread_join(threads[i], NULL);
+        if (res == -1)
+        {
+            perror("pthread_join");
+        }
+        printf("Joined thread %ld \n", i);
+    }
+    printf("Operations done\n");
+    free(threads);
+    free(args);
 }
 
 int main(int argc, char **argv)
@@ -132,24 +186,19 @@ int main(int argc, char **argv)
     dest = src;
     dest.img = malloc(dest.width * dest.height);
 
-    pthread_t *threads = calloc(sizeof *threads, n_threads);
-    NumbersArgs *args = calloc(sizeof *threads, n_threads);
-
-    for (size_t i = 0; i < n_threads; i++)
+    if (strcmp(type, "numbers") == 0)
     {
-        args[i] = (NumbersArgs){.src = &src, .dest = &dest, .id = i, .n_threads = n_threads};
-        pthread_create(threads + i, NULL, negate_numbers, &args[i]);
+        run_method(n_threads, &src, &dest, negate_numbers);
     }
-    for (size_t i = 0; i < n_threads; i++)
+    else if (strcmp(type, "block") == 0)
     {
-        int res = pthread_join(threads[i], NULL);
-        if (res == -1)
-        {
-            perror("pthread_join");
-        }
+        run_method(n_threads, &src, &dest, negate_blocks);
     }
-
-    // negate(&src, &dest);
+    else
+    {
+        perror("Bad type");
+        exit(-1);
+    }
 
     save_pgm(out_name, &dest);
     free_image(&src);

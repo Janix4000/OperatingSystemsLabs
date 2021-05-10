@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g 
 CLIBS = -lrt -lm -lpthread
 OPT = O0
-ARGS ?= 4 numbers file.pgm file1.pgm
+ARGS ?= 7 block file.pgm file1.pgm
 LIB = ./lib
 
 all: clean main
