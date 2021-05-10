@@ -2,13 +2,13 @@ CC = gcc
 CFLAGS = -Wall -g 
 CLIBS = -lrt -lm -lpthread
 OPT = O0
-ARGS ?= 20 20
+ARGS ?= 4 numbers file.pgm file1.pgm
 LIB = ./lib
 
 all: clean main
 
 run_main: main
-	./main.out
+	./main.out $(ARGS)
 
 main: 
 	$(CC) $(CFLAGS) -$(OPT) -static  main.c -o main.out $(CLIBS)
