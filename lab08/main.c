@@ -182,7 +182,10 @@ int main(int argc, char **argv)
     const char *out_name = argv[3];
 
     Image src, dest;
-    load_pgm(in_name, &src);
+    if (load_pgm(in_name, &src) == -1)
+    {
+        exit(-1);
+    }
     dest = src;
     dest.img = malloc(dest.width * dest.height);
 
@@ -200,7 +203,11 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    save_pgm(out_name, &dest);
+    if (save_pgm(out_name, &dest) == -1)
+    {
+        exit(-1);
+    }
+
     free_image(&src);
     free_image(&dest);
     return 0;
