@@ -66,7 +66,7 @@ int load_pgm(const char *filename, Image *img)
     fgets(pred, sizeof(pred), file);
     int max_col;
     fscanf(file, "%d %d %d", &img->width, &img->height, &max_col);
-    img->img = malloc(img->width * img->height);
+    img->img = calloc(img->width * img->height, sizeof *img->img);
     for (size_t y = 0; y < img->height; y++)
     {
         for (size_t x = 0; x < img->width; x++)
@@ -123,7 +123,7 @@ void *negate_blocks(void *args)
     const size_t min_x = id * (src->width / n_threads);
     const size_t max_x = id < n_threads - 1 ? (id + 1) * (src->width / n_threads) : src->width;
 
-    printf("Thread %d from %ld to %ld\n", id, min_x, max_x);
+    // printf("Thread %d from %ld to %ld\n", id, min_x, max_x);
 
     for (size_t y = 0; y < src->height; y++)
     {
@@ -133,7 +133,7 @@ void *negate_blocks(void *args)
             dest->img[x + y * src->height] = 255 - tmp;
         }
     }
-    printf("Thread %d done\n", id);
+    // printf("Thread %d done\n", id);
     return NULL;
 }
 
@@ -168,13 +168,13 @@ int main(int argc, char **argv)
     argv++;
     if (argc != 4)
     {
-        perror("Bad args");
+        fprintf(stderr, "Bad args");
         exit(-1);
     }
     int n_threads = atoi(argv[0]);
     if (n_threads <= 0)
     {
-        perror("Bad n_threads");
+        fprintf(stderr, "Bad n_threads");
         exit(-1);
     }
     const char *type = argv[1];
@@ -186,8 +186,9 @@ int main(int argc, char **argv)
     {
         exit(-1);
     }
-    dest = src;
-    dest.img = malloc(dest.width * dest.height);
+    dest.width = src.width;
+    dest.height = src.height;
+    dest.img = calloc(dest.width * dest.height, sizeof *dest.img);
 
     if (strcmp(type, "numbers") == 0)
     {
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        perror("Bad type");
+        fprintf(stderr, "Bad type");
         exit(-1);
     }
 
