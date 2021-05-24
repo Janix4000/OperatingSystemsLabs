@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/time.h>
 
 typedef struct
 {
@@ -88,10 +89,14 @@ typedef struct
     int id;
     const Image *src;
     Image *dest;
+    long int time;
 } ThreadArgs;
 
 void *negate_numbers(void *args)
 {
+    struct timeval tval_before, tval_after, tval_result;
+    gettimeofday(&tval_before, NULL);
+
     ThreadArgs *number_args = args;
 
     const Image *src = number_args->src;
@@ -108,11 +113,19 @@ void *negate_numbers(void *args)
             }
         }
     }
-    return NULL;
+
+    gettimeofday(&tval_after, NULL);
+    timersub(&tval_after, &tval_before, &tval_result);
+    long int micros = (long int)tval_result.tv_sec * 1000000 + (long int)tval_result.tv_usec;
+    number_args->time = micros;
+    return &number_args->time;
 }
 
 void *negate_blocks(void *args)
 {
+    struct timeval tval_before, tval_after, tval_result;
+    gettimeofday(&tval_before, NULL);
+
     ThreadArgs *number_args = args;
 
     const Image *src = number_args->src;
@@ -123,8 +136,6 @@ void *negate_blocks(void *args)
     const size_t min_x = id * (src->width / n_threads);
     const size_t max_x = id < n_threads - 1 ? (id + 1) * (src->width / n_threads) : src->width;
 
-    // printf("Thread %d from %ld to %ld\n", id, min_x, max_x);
-
     for (size_t y = 0; y < src->height; y++)
     {
         for (size_t x = min_x; x < max_x; x++)
@@ -133,21 +144,27 @@ void *negate_blocks(void *args)
             dest->img[x + y * src->height] = 255 - tmp;
         }
     }
-    // printf("Thread %d done\n", id);
-    return NULL;
+
+    gettimeofday(&tval_after, NULL);
+    timersub(&tval_after, &tval_before, &tval_result);
+    long int micros = (long int)tval_result.tv_sec * 1000000 + (long int)tval_result.tv_usec;
+    number_args->time = micros;
+    return &number_args->time;
 }
 
 void run_method(int n_threads, Image *src, Image *dest, void *(*method)(void *))
 {
     pthread_t *threads = calloc(sizeof *threads, n_threads);
-    ThreadArgs *args = calloc(sizeof *threads, n_threads);
+    ThreadArgs *args = calloc(sizeof *args, n_threads);
+
+    struct timeval tval_before, tval_after, tval_result;
+    gettimeofday(&tval_before, NULL);
 
     for (size_t i = 0; i < n_threads; i++)
     {
         args[i] = (ThreadArgs){.src = src, .dest = dest, .id = i, .n_threads = n_threads};
-        pthread_create(threads + i, NULL, method, &args[i]);
+        pthread_create(&threads[i], NULL, method, &args[i]);
     }
-    printf("Waiting for join\n");
     for (size_t i = 0; i < n_threads; i++)
     {
         int res = pthread_join(threads[i], NULL);
@@ -155,9 +172,20 @@ void run_method(int n_threads, Image *src, Image *dest, void *(*method)(void *))
         {
             perror("pthread_join");
         }
-        printf("Joined thread %ld \n", i);
     }
-    printf("Operations done\n");
+
+    gettimeofday(&tval_after, NULL);
+    timersub(&tval_after, &tval_before, &tval_result);
+    long int micros = (long int)tval_result.tv_sec * 1000000 + (long int)tval_result.tv_usec;
+    printf("Total time elapsed: %ldμs\n", micros);
+
+    for (size_t i = 0; i < n_threads; i++)
+    {
+        int id = args[i].id;
+        long int micros = args[i].time;
+        printf("For %d time: %ldμs\n", id, micros);
+    }
+
     free(threads);
     free(args);
 }

@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g 
 CLIBS = -lrt -lm -lpthread
 OPT = O0
-ARGS ?= 6 numbers baboom.pgm baboom1.pgm
+ARGS ?= 16 numbers file.pgm file1.pgm
 LIB = ./lib
 
 all: clean main
