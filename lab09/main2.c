@@ -4,6 +4,17 @@
 #include <stdbool.h>
 #include <time.h>
 
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_YELLOW "\x1b[33m"
+#define ANSI_COLOR_BLUE "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN "\x1b[36m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
+#define console_log(who, color, text, ...) \
+    printf("[" color who ANSI_COLOR_RESET "]: " text, __VA_ARGS__)
+
 #define SANTA_IDX 0
 
 #define N_SANTA_SHIPPED_MAX 3
@@ -92,7 +103,7 @@ cleanup:
 void *santa_claus(void *none)
 {
     size_t n_gifted_presents = 0;
-    printf("Mikołaj: \"Budzić mnie tylko w poważnych sytuacjach!\"\n");
+    console_log("Mikołaj", ANSI_COLOR_RED, "Budzić mnie tylko w poważnych sytuacjach!%c", '\n');
     while (n_gifted_presents < N_SANTA_SHIPPED_MAX)
     {
         lock(&santa_mut)
@@ -104,13 +115,13 @@ void *santa_claus(void *none)
                 pthread_cond_wait(&santa_wakeup_cond, &santa_mut);
             }
 
-            printf("Mikołaj: \"Wstaję z kanapy.\"\n");
+            console_log("Mikołaj", ANSI_COLOR_RED, "Wstaję z kanapy.%c", '\n');
 
             if (n_waiting_reindeers == N_REINDEERS)
             {
-                printf("Mikołaj: \"Dostarczam zabawki z reniferami.\"\n");
+                console_log("Mikołaj", ANSI_COLOR_RED, "Dostarczam zabawki z reniferami.%c", '\n');
                 rand_sleep(2);
-                printf("Mikołaj: \"Dostarczyłem zabawki.\"\n");
+                console_log("Mikołaj", ANSI_COLOR_RED, "Dostarczyłem zabawki.%c", '\n');
 
                 n_waiting_reindeers = 0;
                 n_gifted_presents++;
@@ -119,13 +130,16 @@ void *santa_claus(void *none)
             }
             else if (n_waiting_elves == N_ELVES_TRIGGER)
             {
-                printf(
-                    "Mikołaj: \"Rozwiązuję problemy elfów stażystów %zu, %zu, %zu.\"\n",
-                    waiting_elves_ids[0],
-                    waiting_elves_ids[1],
-                    waiting_elves_ids[2]);
-                rand_sleep(2);
+                console_log("Mikołaj", ANSI_COLOR_RED, "Rozwiązuję problemy elfów stażystów %zu, %zu, %zu.\n",
+                            waiting_elves_ids[0],
+                            waiting_elves_ids[1],
+                            waiting_elves_ids[2]);
+                rand_sleep(1);
 
+                console_log("Mikołaj", ANSI_COLOR_RED, "Rozwiązałem problemy elfów deb... stażystów %zu, %zu, %zu.\n",
+                            waiting_elves_ids[0],
+                            waiting_elves_ids[1],
+                            waiting_elves_ids[2]);
                 n_waiting_elves = 0;
                 pthread_cond_broadcast(&elves_wakeup_cond);
             }
@@ -133,7 +147,7 @@ void *santa_claus(void *none)
             pthread_cleanup_pop(false);
         }
     }
-    printf("Mikołaj: \"Zabawki dostarczone, zwijamy interes.\"\n");
+    console_log("Mikołaj", ANSI_COLOR_RED, "Zabawki dostarczone, zwijamy interes.%c", '\n');
     return NULL;
 }
 
@@ -158,7 +172,7 @@ void *elf(void *id)
             pthread_cleanup_pop(false);
         }
 
-        printf("Elf: \"Praca praca.\", %zu\n", worker_id);
+        console_log("Elf", ANSI_COLOR_CYAN, "Praca praca, %zu\n", worker_id);
         rand_sleep(2);
 
         lock(&santa_mut)
@@ -171,7 +185,7 @@ void *elf(void *id)
             {
                 if (first_try)
                 {
-                    printf("Elf: \"Czekam na powrót innych elfów.\", %zu\n", worker_id);
+                    console_log("Elf", ANSI_COLOR_CYAN, "Czekam na powrót innych elfów, %zu\n", worker_id);
                     first_try = false;
                 }
 
@@ -180,8 +194,7 @@ void *elf(void *id)
 
             last_spot = n_waiting_elves;
             waiting_elves_ids[n_waiting_elves++] = worker_id;
-            printf("Elf: \"Na Mikołaja czeka %zu elfów.\", %zu\n", n_waiting_elves, worker_id);
-
+            console_log("Elf", ANSI_COLOR_CYAN, "Na Mikołaja czeka %zu elfów, %zu\n", n_waiting_elves, worker_id);
             if (n_waiting_elves == N_ELVES_TRIGGER)
             {
                 pthread_cond_signal(&santa_wakeup_cond);
@@ -213,9 +226,9 @@ void *reindeer(void *id)
             pthread_cleanup_pop(false);
         }
 
-        printf("Renifer: \"Dostarczam zabawki.\", %zu\n", reinder_id);
+        console_log("Renifer", ANSI_COLOR_YELLOW, "Dostarczam zabawki, %zu\n", reinder_id);
         rand_sleep(2);
-        printf("Renifer: \"Pora na zasłużone wakacje.\", %zu\n", reinder_id);
+        console_log("Renifer", ANSI_COLOR_YELLOW, "Pora na zasłużone wakacje, %zu\n", reinder_id);
         rand_sleep(5);
 
         lock(&santa_mut)
@@ -223,8 +236,7 @@ void *reindeer(void *id)
             pthread_cleanup_push(mutex_unlock_routine, &santa_mut);
 
             n_waiting_reindeers++;
-            printf("Renifer: \"Na Mikołaja czeka ze mną %zu reniferów.\", %zu\n", n_waiting_reindeers, reinder_id);
-
+            console_log("Renifer", ANSI_COLOR_YELLOW, "Na Mikołaja czeka ze mną %zu reniferów., %zu\n", n_waiting_reindeers, reinder_id);
             if (n_waiting_reindeers == N_REINDEERS)
             {
                 pthread_cond_signal(&santa_wakeup_cond);
