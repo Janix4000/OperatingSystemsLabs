@@ -34,6 +34,8 @@ size_t n_waiting_elves = 0;
 size_t waiting_elves_ids[N_ELVES_TRIGGER];
 
 void mutex_unlock_routine(void *arg);
+
+pthread_mutex_t rand_mut = PTHREAD_MUTEX_INITIALIZER;
 int rand_sleep(time_t secs);
 
 int main(int argc, char const *argv[])
@@ -90,9 +92,9 @@ cleanup:
 void *santa_claus(void *none)
 {
     size_t n_gifted_presents = 0;
+    printf("Mikołaj: \"Budzić mnie tylko w poważnych sytuacjach!\"\n");
     while (n_gifted_presents < N_SANTA_SHIPPED_MAX)
     {
-
         lock(&santa_mut)
         {
             pthread_cleanup_push(mutex_unlock_routine, &santa_mut);
@@ -131,7 +133,7 @@ void *santa_claus(void *none)
             pthread_cleanup_pop(false);
         }
     }
-
+    printf("Mikołaj: \"Zabawki dostarczone, zwijamy interes.\"\n");
     return NULL;
 }
 
@@ -239,4 +241,19 @@ void mutex_unlock_routine(void *arg)
 {
     pthread_mutex_t *mut = arg;
     pthread_mutex_unlock(mut);
+}
+
+int rand_sleep(time_t secs)
+{
+    int random;
+    lock(&rand_mut)
+    {
+        random = rand();
+    }
+
+    struct timespec sleep_time = {
+        .tv_sec = secs,
+        .tv_nsec = 1000 * (random % 1000000)};
+
+    return nanosleep(&sleep_time, NULL);
 }
