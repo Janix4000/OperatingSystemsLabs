@@ -64,7 +64,7 @@ int main(int argc, char const *argv[])
 
     for (size_t i = 1; i < 1 + N_REINDEERS; i++)
     {
-        if (pthread_create(&workers[i], NULL, reindeer, (void *)i) != 0)
+        if (pthread_create(&workers[i], NULL, reindeer, (void *)(i - 1)) != 0)
         {
             workers[i] = invalid_thread;
             goto cleanup;
@@ -73,7 +73,7 @@ int main(int argc, char const *argv[])
 
     for (size_t i = 1 + N_REINDEERS; i < 1 + N_REINDEERS + N_ELVES; i++)
     {
-        if (pthread_create(&workers[i], NULL, elf, (void *)i) != 0)
+        if (pthread_create(&workers[i], NULL, elf, (void *)(i - 1 - N_REINDEERS)) != 0)
         {
             workers[i] = invalid_thread;
             goto cleanup;
@@ -130,7 +130,7 @@ void *santa_claus(void *none)
             }
             else if (n_waiting_elves == N_ELVES_TRIGGER)
             {
-                console_log("Mikołaj", ANSI_COLOR_RED, "Rozwiązuję problemy elfów stażystów (%zu), (%zu), (%zu).\n",
+                console_log("Mikołaj", ANSI_COLOR_RED, "Rozwiązuję problemy elfów    (%zu), (%zu), (%zu).\n",
                             waiting_elves_ids[0],
                             waiting_elves_ids[1],
                             waiting_elves_ids[2]);
